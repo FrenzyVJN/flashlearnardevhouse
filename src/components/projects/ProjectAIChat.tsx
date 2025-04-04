@@ -181,7 +181,7 @@ I'll help with instructions, alternatives, adaptations, or any other questions a
         <h3 className="text-lg font-bold">AI Project Assistant</h3>
       </div>
       
-      <div className="h-full overflow-y-auto mb-4 space-y-3 scrollbar-none">
+      <div className="sm:h-3/5 lg:h-3/4 overflow-y-auto mb-4 space-y-3 scrollbar-none">
         {chatMessages.map((msg, index) => (
           <div 
             key={index} 
