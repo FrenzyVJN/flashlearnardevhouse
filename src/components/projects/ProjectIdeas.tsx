@@ -30,8 +30,10 @@ const mockProjects = [
 const ProjectIdeas = () => {
   const location = useLocation();
   const [projects, setProjects] = useState(mockProjects);
-  const [filteredProjects, setFilteredProjects] = useState(mockProjects);
-  const [isLoading, setIsLoading] = useState(false);
+  const [generationDone, setGenerationDone] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [filteredProjects, setFilteredProjects] = useState([]);
+  const [allProjects, setAllProjects] = useState([]);
   const [activeFilter, setActiveFilter] = useState<string>('all');
   const apiCallMade = useRef(false);
   
@@ -64,6 +66,10 @@ const ProjectIdeas = () => {
                   id (number), 
                   title (string), 
                   description (string), 
+                  steps (List of JSON Objects as such {
+                    title (string)
+                    description (string)
+                  }),
                   difficulty ("Easy", "Medium", or "Hard"), 
                   timeRequired (string like "1 hour"), 
                   imageUrl (use https://http.cat/images/418.jpg as a placeholder), 
@@ -98,6 +104,7 @@ const ProjectIdeas = () => {
           console.error("Error generating projects:", error);
           // Fallback to mock projects on error
           setProjects(mockProjects);
+          setAllProjects(generatedProjects);
           setFilteredProjects(mockProjects);
         } finally {
           setIsLoading(false);
@@ -110,10 +117,8 @@ const ProjectIdeas = () => {
   
   // Handle filtering when activeFilter changes
   useEffect(() => {
-    if (activeFilter === 'all') {
-      setFilteredProjects(projects);
-    } else {
-      setFilteredProjects(projects.filter(project => 
+    if (activeFilter != 'all') {
+      setFilteredProjects(allProjects.filter(project => 
         project.difficulty.toLowerCase() === activeFilter
       ));
     }

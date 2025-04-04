@@ -1,8 +1,8 @@
 
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Star, Clock, ArrowRight } from 'lucide-react';
 import { AnimatedCard } from '@/components/ui/AnimatedCard';
-import { Link } from 'react-router-dom';
 
 interface ProjectCardProps {
   id: number;
@@ -13,6 +13,7 @@ interface ProjectCardProps {
   imageUrl: string;
   rating: number;
   materials: string[];
+  steps: any[],
   index?: number;
 }
 
@@ -25,13 +26,34 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
   imageUrl, 
   rating,
   materials,
+  steps,
   index = 0
 }) => {
+  const navigate = useNavigate();
   const difficultyColor = {
     Easy: 'bg-green-500',
     Medium: 'bg-yellow-500',
     Hard: 'bg-red-500'
   };
+  
+  const handleContinue = () => {
+    navigate(`/project/${id}`, { 
+      state: { 
+        project: JSON.stringify({
+          id, 
+          title, 
+          description, 
+          difficulty, 
+          timeRequired, 
+          imageUrl, 
+          rating,
+          materials,
+          steps,
+          index
+        }) 
+      } 
+    });
+  }
 
   return (
     <AnimatedCard
@@ -82,13 +104,13 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
         </div>
       </div>
       
-      <Link 
-        to={`/project/${id}`} 
+      <button
+        onClick={handleContinue}
         className="flex items-center text-electric-400 hover:text-electric-300 text-sm group mt-auto"
       >
         View Project
         <ArrowRight className="w-4 h-4 ml-1 transform group-hover:translate-x-1 transition-transform" />
-      </Link>
+      </button>
     </AnimatedCard>
   );
 };
