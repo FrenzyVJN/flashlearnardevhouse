@@ -22,17 +22,60 @@ const ScanItem = () => {
     reader.readAsDataURL(file);
   };
 
-  const handleScan = () => {
+  const handleScan = async () => {
     if (!uploadedImage) return;
-    
+  
     setIsScanning(true);
-    
-    // Simulate AI processing with a timeout
-    setTimeout(() => {
+  
+    try {
+      const base64Image = uploadedImage.split(',')[1];
+      console.log("whereweaedss");
+      
+      const GEMINI_API_KEY = "AIzaSyD-UHTng5Gh82qHDTuoxxZiM_nSNbDXqr8";
+      const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
+      
+      const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                {
+                  text: "Identify all objects visible in this image and return them as a comma-separated list of simple terms."
+                },
+                {
+                  inline_data: {
+                    mime_type: "image/jpeg",
+                    data: base64Image
+                  }
+                }
+              ]
+            }
+          ]
+        })
+      });
+  
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`API error: ${JSON.stringify(errorData)}`);
+      }
+  
+      const data = await response.json();
+      
+      const itemsText = data.candidates[0].content.parts[0].text;
+      const itemsList = itemsText.split(',').map(item => item.trim());
+      
+      setIdentifiedItems(itemsList);
+    } catch (error) {
+      console.error("Error analyzing image:", error);
+      setIdentifiedItems(["Error identifying items"]);
+    } finally {
       setIsScanning(false);
       setScanComplete(true);
-      setIdentifiedItems(['Cardboard tube', 'Empty plastic bottles', 'Old magazines', 'Bottle caps']);
-    }, 3000);
+    }
   };
 
   const handleContinue = () => {
