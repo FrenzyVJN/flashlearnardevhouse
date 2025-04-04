@@ -1,37 +1,13 @@
-
 import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import ProjectCard from './ProjectCard';
-
-// Mock data for project ideas
-  const mockProjects = [
-    {
-      id: 1,
-      title: "Rocket Pencil Holder",
-      description: "Transform cardboard tubes into an awesome rocket-shaped pencil holder with customizable fins and colors.",
-      difficulty: "Easy" as const,
-      timeRequired: "1 hour",
-      imageUrl: "https://images.unsplash.com/photo-1517420704952-d9f39e95b43e?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60",
-      rating: 4.7,
-      materials: ["Cardboard tube", "Paint", "Scissors", "Glue"]
-    },
-    {
-      id: 6,
-      title: "Magazine Paper Beads",
-      description: "Roll colorful magazine pages into beautiful beads for jewelry making.",
-      difficulty: "Easy" as const,
-      timeRequired: "1 hour",
-      imageUrl: "https://images.unsplash.com/photo-1605100804763-247f67b3557e?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60",
-      rating: 4.6,
-      materials: ["Old magazines", "Glue", "Toothpicks", "String"]
-    }
-];
 
 const ProjectIdeas = () => {
   const location = useLocation();
   const [generationDone, setGenerationDone] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [filteredProjects, setFilteredProjects] = useState(mockProjects);
+  const [filteredProjects, setFilteredProjects] = useState([]);
+  const [allProjects, setAllProjects] = useState([]);
   const [activeFilter, setActiveFilter] = useState<string>('all');
   
   const scannedItems = location.state?.items || [];
@@ -62,6 +38,10 @@ const ProjectIdeas = () => {
                   id (number), 
                   title (string), 
                   description (string), 
+                  steps (List of JSON Objects as such {
+                    title (string)
+                    description (string)
+                  }),
                   difficulty ("Easy", "Medium", or "Hard"), 
                   timeRequired (string like "1 hour"), 
                   imageUrl (use https://http.cat/images/418.jpg as a placeholder), 
@@ -83,24 +63,21 @@ const ProjectIdeas = () => {
           
           const generatedProjects = JSON.parse(projectsJson);
           setFilteredProjects(generatedProjects);
+          setAllProjects(generatedProjects);
           setGenerationDone(true);
         } catch (error) {
           console.error("Error generating projects:", error);
-          setFilteredProjects(mockProjects);
           setGenerationDone(true);
         }
       };
   
       generateProjects();
-      console.log(generationDone);
     }
   }, [generationDone, scannedItems]);
   
   useEffect(() => {
-    if (activeFilter === 'all') {
-      setFilteredProjects(mockProjects);
-    } else {
-      setFilteredProjects(mockProjects.filter(project => 
+    if (activeFilter != 'all') {
+      setFilteredProjects(allProjects.filter(project => 
         project.difficulty.toLowerCase() === activeFilter
       ));
     }
