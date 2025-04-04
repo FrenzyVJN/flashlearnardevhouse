@@ -13,7 +13,7 @@ interface ProjectCardProps {
   imageUrl: string;
   rating: number;
   materials: string[];
-  instructions: any[],
+  steps: any[],
   index?: number;
 }
 
@@ -26,7 +26,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
   imageUrl, 
   rating,
   materials,
-  instructions,
+  steps,
   index = 0
 }) => {
   const navigate = useNavigate();
@@ -48,7 +48,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
           imageUrl, 
           rating,
           materials,
-          instructions,
+          steps,
           index
         }) 
       } 
