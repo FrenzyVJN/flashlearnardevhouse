@@ -59,7 +59,7 @@ const ProjectIdeas = () => {
             body: JSON.stringify({
               contents: [{
                 parts: [{
-                  text: `Generate creative DIY project ideas using these materials: ${itemsString}. 
+                  text: `Generate creative DIY project or recipes or whatever is relevant in that particular domain ideas using these materials: ${itemsString}. 
                   Format the response as a JSON array of objects with these properties: 
                   id (number), 
                   title (string), 
