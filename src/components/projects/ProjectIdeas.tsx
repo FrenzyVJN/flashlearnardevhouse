@@ -29,7 +29,7 @@ const mockProjects = [
 
 const ProjectIdeas = () => {
   const location = useLocation();
-  const [projects, setProjects] = useState(mockProjects);
+  const [projects, setProjects] = useState([]);
   const [generationDone, setGenerationDone] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [filteredProjects, setFilteredProjects] = useState([]);
@@ -84,19 +84,18 @@ const ProjectIdeas = () => {
           if (!response.ok) throw new Error("Failed to generate projects");
   
           const data = await response.json();
-          const projectsText = data.candidates[0].content.parts[0].text;
-          
+          const projectsText = data.candidates[0].content.parts[0].text;          
           const jsonMatch = projectsText.match(/\[[\s\S]*\]/);
           const projectsJson = jsonMatch ? jsonMatch[0] : projectsText;
-          
           const generatedProjects = JSON.parse(projectsJson);
+
           setProjects(generatedProjects);
-          
-          setProjects(mockProjects);
           setAllProjects(generatedProjects);
-          setFilteredProjects(mockProjects);
+          setFilteredProjects(generatedProjects);
         } catch (error) {
           console.error("Error generating projects:", error);
+          setProjects(mockProjects);
+          setFilteredProjects(mockProjects);
           alert("Error generating projects");
         } finally {
           setIsLoading(false);

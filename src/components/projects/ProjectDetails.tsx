@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, act } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useLocation } from 'react-router-dom';
 import { ArrowLeft, Star, Clock, Users, MessageCircle, Share2, ChevronRight } from 'lucide-react';
@@ -93,16 +93,19 @@ const ProjectDetails = () => {
   }, []);
   
   const handleNextStep = () => {
+    console.log(activeStep, projectData.steps.length);
     if (activeStep < projectData.steps.length - 1) {
       setActiveStep(activeStep + 1);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      alert("congrats!!");
     }
   };
   
   const handlePrevStep = () => {
     if (activeStep > 0) {
       setActiveStep(activeStep - 1);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      alert("nooo!!");
     }
   };
   
@@ -224,7 +227,6 @@ const ProjectDetails = () => {
                 <button 
                   className="px-4 py-2 border border-white/10 rounded-lg text-gray-400 hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   onClick={handlePrevStep}
-                  disabled={activeStep === 0}
                 >
                   Previous Step
                 </button>
@@ -236,7 +238,6 @@ const ProjectDetails = () => {
                     : "bg-electric-600 hover:bg-electric-700 text-white"
                   } transition-colors`}
                   onClick={handleNextStep}
-                  disabled={activeStep === projectData.steps.length - 1}
                 >
                   {activeStep === projectData.steps.length - 1 ? "Complete Project" : "Next Step"}
                 </button>
