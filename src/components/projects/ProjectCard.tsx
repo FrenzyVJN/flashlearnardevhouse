@@ -4,6 +4,11 @@ import { useNavigate } from 'react-router-dom';
 import { Star, Clock, ArrowRight } from 'lucide-react';
 import { AnimatedCard } from '@/components/ui/AnimatedCard';
 
+interface ProjectStep {
+  title: string;
+  description: string;
+}
+
 interface ProjectCardProps {
   id: number;
   title: string;
@@ -13,7 +18,7 @@ interface ProjectCardProps {
   imageUrl: string;
   rating: number;
   materials: string[];
-  steps: any[],
+  steps: ProjectStep[];
   index?: number;
 }
 
