@@ -1,11 +1,46 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { ArrowLeft, Star, Clock, Users, MessageCircle, Share2, ChevronRight } from 'lucide-react';
 import { AnimatedButton } from '@/components/ui/AnimatedButton';
 import { AnimatedCard } from '@/components/ui/AnimatedCard';
 import ProjectAIChat from './ProjectAIChat';
 
-const projectData = {
+const comments = [
+  {
+    user: "MakerMike",
+    comment: "Made this with my kids and they loved it! We used glow-in-the-dark paint for an extra cool effect.",
+    rating: 5,
+    avatar: "https://i.pravatar.cc/150?img=1"
+  },
+  {
+    user: "CreativeCathy",
+    comment: "Great project! I modified it to make a rocket-shaped piggy bank by cutting a slot in the side.",
+    rating: 5,
+    avatar: "https://i.pravatar.cc/150?img=5"
+  },
+  {
+    user: "DIYDavid",
+    comment: "Simple but effective. Took me about 45 minutes from start to finish.",
+    rating: 4,
+    avatar: "https://i.pravatar.cc/150?img=8"
+  }
+]
+
+interface ProjectCardProps {
+  id: number;
+  title: string;
+  description: string;
+  difficulty: 'Easy' | 'Medium' | 'Hard';
+  timeRequired: string;
+  imageUrl: string;
+  rating: number;
+  materials: string[];
+  steps: any[]
+  index?: number;
+}
+
+const projectDataMock: ProjectCardProps = {
   id: 1,
   title: "Rocket Pencil Holder",
   description: "Transform cardboard tubes into an awesome rocket-shaped pencil holder with customizable fins and colors. This project is perfect for kids and adults alike, and makes for a great desk accessory or gift.",
@@ -17,59 +52,36 @@ const projectData = {
   steps: [
     {
       title: "Gather Materials",
-      description: "Collect all the materials you'll need for this project. Make sure your cardboard tube is clean and dry.",
-      imageUrl: "https://images.unsplash.com/photo-1517420704952-d9f39e95b43e?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60"
+      description: "Collect all the materials you'll need for this project. Make sure your cardboard tube is clean and dry."
     },
     {
       title: "Cut the Rocket Shape",
-      description: "Cut a cone shape from colored paper for the rocket's nose. Cut triangles for the fins from cardboard or thick paper.",
-      imageUrl: "https://images.unsplash.com/photo-1545289790-36b40a5dc527?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60"
+      description: "Cut a cone shape from colored paper for the rocket's nose. Cut triangles for the fins from cardboard or thick paper."
     },
     {
       title: "Paint the Tube",
-      description: "Paint the cardboard tube in your chosen colors. Let it dry completely before moving to the next step.",
-      imageUrl: "https://images.unsplash.com/photo-1584992236310-6ecdee5ffb68?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60"
+      description: "Paint the cardboard tube in your chosen colors. Let it dry completely before moving to the next step."
     },
     {
       title: "Assemble the Rocket",
-      description: "Glue the cone to the top of the tube. Attach the fins around the bottom of the tube, spacing them evenly.",
-      imageUrl: "https://images.unsplash.com/photo-1544947950-fa07a98d237f?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60"
+      description: "Glue the cone to the top of the tube. Attach the fins around the bottom of the tube, spacing them evenly."
     },
     {
       title: "Add Details",
-      description: "Add decorative details like windows, a door, or patterns using markers or more colored paper.",
-      imageUrl: "https://images.unsplash.com/photo-1513364776144-60967b0f800f?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60"
-    }
-  ],
-  comments: [
-    {
-      user: "MakerMike",
-      comment: "Made this with my kids and they loved it! We used glow-in-the-dark paint for an extra cool effect.",
-      rating: 5,
-      avatar: "https://i.pravatar.cc/150?img=1"
-    },
-    {
-      user: "CreativeCathy",
-      comment: "Great project! I modified it to make a rocket-shaped piggy bank by cutting a slot in the side.",
-      rating: 5,
-      avatar: "https://i.pravatar.cc/150?img=5"
-    },
-    {
-      user: "DIYDavid",
-      comment: "Simple but effective. Took me about 45 minutes from start to finish.",
-      rating: 4,
-      avatar: "https://i.pravatar.cc/150?img=8"
+      description: "Add decorative details like windows, a door, or patterns using markers or more colored paper."
     }
   ]
 };
 
 const ProjectDetails = () => {
+  const location = useLocation();
   const { id } = useParams<{ id: string }>();
   const [isLoading, setIsLoading] = useState(true);
   const [activeStep, setActiveStep] = useState(0);
+
+  const projectData: ProjectCardProps = JSON.parse(location.state?.project) || projectDataMock;
   
   useEffect(() => {
-    // Simulate loading
     setTimeout(() => {
       setIsLoading(false);
     }, 1000);
@@ -146,7 +158,6 @@ const ProjectDetails = () => {
         </div>
       </div>
       
-      {/* Materials section */}
       <div className="mb-12">
         <h2 className="text-xl font-bold mb-4">Materials You'll Need</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -191,7 +202,7 @@ const ProjectDetails = () => {
             <div className="md:w-1/2">
               <div className="rounded-lg overflow-hidden mb-4">
                 <img 
-                  src={projectData.steps[activeStep].imageUrl} 
+                  src={projectData.imageUrl}
                   alt={`Step ${activeStep + 1}`}
                   className="w-full h-auto"
                 />
@@ -276,7 +287,7 @@ const ProjectDetails = () => {
           </div>
           
           <div className="space-y-6">
-            {projectData.comments.map((comment, index) => (
+            {comments.map((comment, index) => (
               <AnimatedCard 
                 key={index} 
                 withBorder 
