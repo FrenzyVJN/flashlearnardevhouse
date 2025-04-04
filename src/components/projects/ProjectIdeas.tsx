@@ -4,84 +4,97 @@ import { useLocation } from 'react-router-dom';
 import ProjectCard from './ProjectCard';
 
 // Mock data for project ideas
-const mockProjects = [
-  {
-    id: 1,
-    title: "Rocket Pencil Holder",
-    description: "Transform cardboard tubes into an awesome rocket-shaped pencil holder with customizable fins and colors.",
-    difficulty: "Easy" as const,
-    timeRequired: "1 hour",
-    imageUrl: "https://images.unsplash.com/photo-1517420704952-d9f39e95b43e?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60",
-    rating: 4.7,
-    materials: ["Cardboard tube", "Paint", "Scissors", "Glue"]
-  },
-  {
-    id: 2,
-    title: "LED Bottle Lamp",
-    description: "Create a beautiful ambient lamp from empty plastic bottles with LED string lights inside.",
-    difficulty: "Medium" as const,
-    timeRequired: "2 hours",
-    imageUrl: "https://images.unsplash.com/photo-1564185322734-b75606d3cb7d?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60",
-    rating: 4.9,
-    materials: ["Empty plastic bottles", "LED string lights", "Scissors", "Decorative tape"]
-  },
-  {
-    id: 3,
-    title: "Magazine Mosaic Wall Art",
-    description: "Cut colorful patterns from old magazines to create stunning mosaic wall art for your home.",
-    difficulty: "Medium" as const,
-    timeRequired: "3 hours",
-    imageUrl: "https://images.unsplash.com/photo-1501942250685-1e86701d1eb6?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60",
-    rating: 4.5,
-    materials: ["Old magazines", "Canvas", "Glue", "Scissors"]
-  },
-  {
-    id: 4,
-    title: "Bottle Cap Necklace",
-    description: "Turn colorful bottle caps into unique pendants for a one-of-a-kind necklace.",
-    difficulty: "Easy" as const,
-    timeRequired: "30 minutes",
-    imageUrl: "https://images.unsplash.com/photo-1531995811006-35cb42e1a022?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60",
-    rating: 4.3,
-    materials: ["Bottle caps", "String/chain", "Drill", "Jump rings"]
-  },
-  {
-    id: 5,
-    title: "Mini Greenhouse",
-    description: "Build a mini greenhouse from plastic bottles to start your seeds and grow small plants.",
-    difficulty: "Medium" as const,
-    timeRequired: "2 hours",
-    imageUrl: "https://images.unsplash.com/photo-1466692476655-ab0c26c69cbf?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60",
-    rating: 4.8,
-    materials: ["Empty plastic bottles", "Soil", "Seeds", "Scissors"]
-  },
-  {
-    id: 6,
-    title: "Magazine Paper Beads",
-    description: "Roll colorful magazine pages into beautiful beads for jewelry making.",
-    difficulty: "Easy" as const,
-    timeRequired: "1 hour",
-    imageUrl: "https://images.unsplash.com/photo-1605100804763-247f67b3557e?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60",
-    rating: 4.6,
-    materials: ["Old magazines", "Glue", "Toothpicks", "String"]
-  }
+  const mockProjects = [
+    {
+      id: 1,
+      title: "Rocket Pencil Holder",
+      description: "Transform cardboard tubes into an awesome rocket-shaped pencil holder with customizable fins and colors.",
+      difficulty: "Easy" as const,
+      timeRequired: "1 hour",
+      imageUrl: "https://images.unsplash.com/photo-1517420704952-d9f39e95b43e?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60",
+      rating: 4.7,
+      materials: ["Cardboard tube", "Paint", "Scissors", "Glue"]
+    },
+    {
+      id: 6,
+      title: "Magazine Paper Beads",
+      description: "Roll colorful magazine pages into beautiful beads for jewelry making.",
+      difficulty: "Easy" as const,
+      timeRequired: "1 hour",
+      imageUrl: "https://images.unsplash.com/photo-1605100804763-247f67b3557e?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60",
+      rating: 4.6,
+      materials: ["Old magazines", "Glue", "Toothpicks", "String"]
+    }
 ];
 
 const ProjectIdeas = () => {
   const location = useLocation();
+  const [generationDone, setGenerationDone] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [filteredProjects, setFilteredProjects] = useState(mockProjects);
   const [activeFilter, setActiveFilter] = useState<string>('all');
   
-  // Get passed items from the scan page
   const scannedItems = location.state?.items || [];
   
   useEffect(() => {
-    // Simulate API loading
     setTimeout(() => {
       setIsLoading(false);
     }, 1500);
-  }, []);
+  
+    if (!generationDone && scannedItems.length > 0) {
+      const generateProjects = async () => {
+        try {
+          const itemsString = scannedItems.join(', ');
+          
+          const GEMINI_API_KEY = "AIzaSyD-UHTng5Gh82qHDTuoxxZiM_nSNbDXqr8";
+          const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
+          
+          const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              contents: [{
+                parts: [{
+                  text: `Generate creative DIY project ideas using these materials: ${itemsString}. 
+                  Format the response as a JSON array of objects with these properties: 
+                  id (number), 
+                  title (string), 
+                  description (string), 
+                  difficulty ("Easy", "Medium", or "Hard"), 
+                  timeRequired (string like "1 hour"), 
+                  imageUrl (use https://http.cat/images/418.jpg as a placeholder), 
+                  rating (number between 4.0 and 5.0), 
+                  materials (array of strings).
+                  Only include projects that use at least one of the scanned items. Generate 5-8 projects.`
+                }]
+              }]
+            })
+          });
+  
+          if (!response.ok) throw new Error("Failed to generate projects");
+  
+          const data = await response.json();
+          const projectsText = data.candidates[0].content.parts[0].text;
+          
+          const jsonMatch = projectsText.match(/\[[\s\S]*\]/);
+          const projectsJson = jsonMatch ? jsonMatch[0] : projectsText;
+          
+          const generatedProjects = JSON.parse(projectsJson);
+          setFilteredProjects(generatedProjects);
+          setGenerationDone(true);
+        } catch (error) {
+          console.error("Error generating projects:", error);
+          setFilteredProjects(mockProjects);
+          setGenerationDone(true);
+        }
+      };
+  
+      generateProjects();
+      console.log(generationDone);
+    }
+  }, [generationDone, scannedItems]);
   
   useEffect(() => {
     if (activeFilter === 'all') {
