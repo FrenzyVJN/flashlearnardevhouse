@@ -12,6 +12,7 @@ import AR from "./pages/AR";
 import Community from "./pages/Community";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
+import LogSign from "./pages/LogSign"
 
 const queryClient = new QueryClient();
 
@@ -29,6 +30,7 @@ const App = () => {
             <Route path="/project/:id" element={<Project />} />
             <Route path="/ar/:id" element={<AR />} />
             <Route path="/community" element={<Community />} />
+            <Route path="/logs" element={<LogSign />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

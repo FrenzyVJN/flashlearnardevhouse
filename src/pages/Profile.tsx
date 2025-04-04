@@ -7,6 +7,38 @@ import { AnimatedButton } from '@/components/ui/AnimatedButton';
 import { AnimatedCard } from '@/components/ui/AnimatedCard';
 import ProjectCard from '@/components/projects/ProjectCard';
 
+interface ProjectStep {
+  title: string;
+  description: string;
+}
+
+interface ProjectCardProps {
+  id: number;
+  title: string;
+  description: string;
+  difficulty: 'Easy' | 'Medium' | 'Hard';
+  timeRequired: string;
+  imageUrl: string;
+  rating: number;
+  materials: string[];
+  steps: ProjectStep[];
+  index?: number;
+}
+
+interface UserData {
+  password: string
+  name: string
+  username: string
+  bio: string
+  avatar: string
+  level: string
+  projects: number
+  followers: number
+  following: number
+  joinedDate: string
+  badges: string[]
+  completedProjects: ProjectCardProps[]
+}
 // Mock user data
 const userData = {
   name: "Alex Johnson",
@@ -29,6 +61,7 @@ const userData = {
       imageUrl: "https://images.unsplash.com/photo-1517420704952-d9f39e95b43e?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60",
       rating: 4.8,
       materials: ["Cardboard tube", "LED lights", "Paint", "Glue"],
+      steps: [],
       completedOn: "3 weeks ago"
     },
     {
@@ -40,6 +73,7 @@ const userData = {
       imageUrl: "https://images.unsplash.com/photo-1564185322734-b75606d3cb7d?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60",
       rating: 4.9,
       materials: ["Wine bottles", "LED string lights", "Drill", "Cork"],
+      steps: [],
       completedOn: "2 months ago"
     },
     {
@@ -51,6 +85,7 @@ const userData = {
       imageUrl: "https://images.unsplash.com/photo-1466692476655-ab0c26c69cbf?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60",
       rating: 4.7,
       materials: ["Empty plastic bottles", "Soil", "Seeds", "Scissors"],
+      steps: [],
       completedOn: "1 week ago"
     }
   ],
