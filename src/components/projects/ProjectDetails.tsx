@@ -27,6 +27,11 @@ const comments = [
   }
 ]
 
+interface ProjectStep {
+  title: string;
+  description: string;
+}
+
 interface ProjectCardProps {
   id: number;
   title: string;
@@ -36,7 +41,7 @@ interface ProjectCardProps {
   imageUrl: string;
   rating: number;
   materials: string[];
-  steps: any[]
+  steps: ProjectStep[];
   index?: number;
 }
 
