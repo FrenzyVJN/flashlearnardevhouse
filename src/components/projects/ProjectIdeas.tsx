@@ -92,20 +92,12 @@ const ProjectIdeas = () => {
           const generatedProjects = JSON.parse(projectsJson);
           setProjects(generatedProjects);
           
-          // Apply active filter to the new projects
-          if (activeFilter === 'all') {
-            setFilteredProjects(generatedProjects);
-          } else {
-            setFilteredProjects(generatedProjects.filter(project => 
-              project.difficulty.toLowerCase() === activeFilter
-            ));
-          }
-        } catch (error) {
-          console.error("Error generating projects:", error);
-          // Fallback to mock projects on error
           setProjects(mockProjects);
           setAllProjects(generatedProjects);
           setFilteredProjects(mockProjects);
+        } catch (error) {
+          console.error("Error generating projects:", error);
+          alert("Error generating projects");
         } finally {
           setIsLoading(false);
         }
@@ -115,7 +107,6 @@ const ProjectIdeas = () => {
     }
   }, [scannedItems]);
   
-  // Handle filtering when activeFilter changes
   useEffect(() => {
     if (activeFilter != 'all') {
       setFilteredProjects(allProjects.filter(project => 
