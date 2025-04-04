@@ -1,11 +1,10 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Star, Clock, Users, MessageCircle, Share2, ChevronRight } from 'lucide-react';
 import { AnimatedButton } from '@/components/ui/AnimatedButton';
 import { AnimatedCard } from '@/components/ui/AnimatedCard';
+import ProjectAIChat from './ProjectAIChat';
 
-// Mock project data
 const projectData = {
   id: 1,
   title: "Rocket Pencil Holder",
@@ -259,54 +258,58 @@ const ProjectDetails = () => {
         </div>
       </div>
       
-      {/* Community feedback */}
-      <div className="mb-12">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-bold">Community Feedback</h2>
-          <div className="flex items-center space-x-4">
-            <button className="flex items-center text-gray-400 hover:text-white transition-colors">
-              <Share2 className="w-4 h-4 mr-2" />
-              Share
-            </button>
-            <button className="flex items-center text-gray-400 hover:text-white transition-colors">
-              <MessageCircle className="w-4 h-4 mr-2" />
-              Comment
-            </button>
+      {/* Community feedback section */}
+      <div className="mb-12 grid md:grid-cols-2 gap-8">
+        <div>
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-bold">Community Feedback</h2>
+            <div className="flex items-center space-x-4">
+              <button className="flex items-center text-gray-400 hover:text-white transition-colors">
+                <Share2 className="w-4 h-4 mr-2" />
+                Share
+              </button>
+              <button className="flex items-center text-gray-400 hover:text-white transition-colors">
+                <MessageCircle className="w-4 h-4 mr-2" />
+                Comment
+              </button>
+            </div>
+          </div>
+          
+          <div className="space-y-6">
+            {projectData.comments.map((comment, index) => (
+              <AnimatedCard 
+                key={index} 
+                withBorder 
+                className="animate-fade-in" 
+                delay={index * 200}
+              >
+                <div className="flex items-start space-x-4">
+                  <img 
+                    src={comment.avatar} 
+                    alt={comment.user} 
+                    className="w-10 h-10 rounded-full"
+                  />
+                  <div className="flex-1">
+                    <div className="flex justify-between mb-2">
+                      <h4 className="font-semibold">{comment.user}</h4>
+                      <div className="flex items-center">
+                        {Array.from({ length: 5 }).map((_, i) => (
+                          <Star 
+                            key={i} 
+                            className={`w-4 h-4 ${i < comment.rating ? "text-yellow-400 fill-yellow-400" : "text-gray-600"}`} 
+                          />
+                        ))}
+                      </div>
+                    </div>
+                    <p className="text-gray-400">{comment.comment}</p>
+                  </div>
+                </div>
+              </AnimatedCard>
+            ))}
           </div>
         </div>
         
-        <div className="space-y-6">
-          {projectData.comments.map((comment, index) => (
-            <AnimatedCard 
-              key={index} 
-              withBorder 
-              className="animate-fade-in" 
-              delay={index * 200}
-            >
-              <div className="flex items-start space-x-4">
-                <img 
-                  src={comment.avatar} 
-                  alt={comment.user} 
-                  className="w-10 h-10 rounded-full"
-                />
-                <div className="flex-1">
-                  <div className="flex justify-between mb-2">
-                    <h4 className="font-semibold">{comment.user}</h4>
-                    <div className="flex items-center">
-                      {Array.from({ length: 5 }).map((_, i) => (
-                        <Star 
-                          key={i} 
-                          className={`w-4 h-4 ${i < comment.rating ? "text-yellow-400 fill-yellow-400" : "text-gray-600"}`} 
-                        />
-                      ))}
-                    </div>
-                  </div>
-                  <p className="text-gray-400">{comment.comment}</p>
-                </div>
-              </div>
-            </AnimatedCard>
-          ))}
-        </div>
+        <ProjectAIChat projectTitle={projectData.title} />
       </div>
     </div>
   );
