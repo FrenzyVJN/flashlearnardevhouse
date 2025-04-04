@@ -36,7 +36,7 @@ interface ProjectCardProps {
   imageUrl: string;
   rating: number;
   materials: string[];
-  steps: any[]
+  instructions: any[]
   index?: number;
 }
 
@@ -49,7 +49,7 @@ const projectDataMock: ProjectCardProps = {
   imageUrl: "https://images.unsplash.com/photo-1517420704952-d9f39e95b43e?ixlib=rb-4.0.3&auto=format&fit=crop&w=900&q=60",
   rating: 4.7,
   materials: ["Cardboard tube", "Colored paper", "Scissors", "Glue", "Paint", "Brushes", "Ruler"],
-  steps: [
+  instructions: [
     {
       title: "Gather Materials",
       description: "Collect all the materials you'll need for this project. Make sure your cardboard tube is clean and dry."
@@ -79,7 +79,6 @@ const ProjectDetails = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [activeStep, setActiveStep] = useState(0);
 
-  console.log(location.state)
   const projectData: ProjectCardProps = JSON.parse(location.state?.project) || projectDataMock;
   
   useEffect(() => {
@@ -89,7 +88,7 @@ const ProjectDetails = () => {
   }, []);
   
   const handleNextStep = () => {
-    if (activeStep < projectData.steps.length - 1) {
+    if (activeStep < projectData.instructions.length - 1) {
       setActiveStep(activeStep + 1);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -183,16 +182,16 @@ const ProjectDetails = () => {
         <div className="mb-8">
           <div className="flex justify-between items-center mb-2">
             <span className="text-sm text-gray-400">
-              Step {activeStep + 1} of {projectData.steps.length}
+              Step {activeStep + 1} of {projectData.instructions.length}
             </span>
             <span className="text-sm text-gray-400">
-              {Math.round(((activeStep + 1) / projectData.steps.length) * 100)}% Complete
+              {Math.round(((activeStep + 1) / projectData.instructions.length) * 100)}% Complete
             </span>
           </div>
           <div className="h-2 bg-gray-700 rounded-full">
             <div 
               className="h-full bg-gradient-to-r from-electric-600 to-electric-400 rounded-full transition-all duration-300"
-              style={{ width: `${((activeStep + 1) / projectData.steps.length) * 100}%` }}
+              style={{ width: `${((activeStep + 1) / projectData.instructions.length) * 100}%` }}
             ></div>
           </div>
         </div>
@@ -212,9 +211,9 @@ const ProjectDetails = () => {
             
             <div className="md:w-1/2">
               <h3 className="text-xl font-bold mb-4">
-                {activeStep + 1}. {projectData.steps[activeStep].title}
+                {activeStep + 1}. {projectData.instructions[activeStep].title}
               </h3>
-              <p className="text-gray-400 mb-6">{projectData.steps[activeStep].description}</p>
+              <p className="text-gray-400 mb-6">{projectData.instructions[activeStep].description}</p>
               
               <div className="flex space-x-4">
                 <button 
@@ -227,14 +226,14 @@ const ProjectDetails = () => {
                 
                 <button 
                   className={`px-4 py-2 rounded-lg ${
-                    activeStep === projectData.steps.length - 1
+                    activeStep === projectData.instructions.length - 1
                     ? "bg-green-600 hover:bg-green-700 text-white"
                     : "bg-electric-600 hover:bg-electric-700 text-white"
                   } transition-colors`}
                   onClick={handleNextStep}
-                  disabled={activeStep === projectData.steps.length - 1}
+                  disabled={activeStep === projectData.instructions.length - 1}
                 >
-                  {activeStep === projectData.steps.length - 1 ? "Complete Project" : "Next Step"}
+                  {activeStep === projectData.instructions.length - 1 ? "Complete Project" : "Next Step"}
                 </button>
               </div>
             </div>
@@ -243,7 +242,7 @@ const ProjectDetails = () => {
         
         {/* Step list */}
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-          {projectData.steps.map((step, index) => (
+          {projectData.instructions.map((step, index) => (
             <button
               key={index}
               className={`p-4 rounded-lg text-left transition-all duration-300 ${
