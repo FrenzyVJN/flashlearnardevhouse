@@ -55,23 +55,33 @@ export default function Signup() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    const newUser: UserData = {
+  
+    const newUser = {
       ...form,
-      joinedDate: new Date().toISOString(),
-      badges: [],
-      completedProjects: [],
-      savedItems: [],
-      activityFeed: []
+      projects: 0,
+      followers: 0,
+      following: 0,
     }
-
-    const existing = users.find(u => u.username === form.username)
-    if (existing) return alert("Username already exists!")
-
-    users.push(newUser)
-    localStorage.setItem("users", JSON.stringify(users))
-    alert("User registered! Now login.")
+  
+    try {
+      console.log("try entered")
+      const res = await fetch('http://localhost:8000/signup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(newUser)
+      })
+      console.log("worked")
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.detail)
+  
+      alert("User registered! Now login.")
+    } catch (err: any) {
+      alert("Error: " + err.message)
+    }
   }
-
+  
   return (
     <form onSubmit={handleSubmit}>
       <input name="name" placeholder="Full Name" onChange={handleChange} />

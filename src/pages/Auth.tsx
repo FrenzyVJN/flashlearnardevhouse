@@ -26,14 +26,14 @@ import {
 } from "@/components/ui/card";
 
 const loginSchema = z.object({
-  email: z.string().email({ message: "Please enter a valid email address" }),
+  username: z.string().username({ message: "Please enter a valid email address" }),
   password: z.string().min(6, { message: "Password must be at least 6 characters long" }),
   rememberMe: z.boolean().optional(),
 });
 
 const signupSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters long" }),
-  email: z.string().email({ message: "Please enter a valid email address" }),
+  username: z.string().username({ message: "Please enter a valid email address" }),
   password: z.string().min(6, { message: "Password must be at least 6 characters long" }),
   confirmPassword: z.string(),
   termsAccepted: z.boolean().refine(val => val === true, {
@@ -55,7 +55,7 @@ const Auth = () => {
   const loginForm = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: "",
+      username: "",
       password: "",
       rememberMe: false,
     },
@@ -65,28 +65,57 @@ const Auth = () => {
     resolver: zodResolver(signupSchema),
     defaultValues: {
       name: "",
-      email: "",
+      username: "",
       password: "",
       confirmPassword: "",
       termsAccepted: false,
     },
   });
-
-  const onLoginSubmit = (values: LoginFormValues) => {
-    console.log("Login form submitted:", values);
-    // Mock login success
-    toast.success("Login successful");
-    navigate("/profile");
+  const API_BASE_URL = "http://localhost:8000";
+  const onLoginSubmit = async (values: LoginFormValues) => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: values.username, // or actual username
+          password: values.password,
+        }),
+      });
+  
+      if (!res.ok) throw new Error((await res.json()).detail);
+  
+      toast.success("Login successful");
+      navigate("/profile");
+    } catch (err) {
+      toast.error(err.message);
+    }
   };
-
-  const onSignupSubmit = (values: SignupFormValues) => {
-    console.log("Signup form submitted:", values);
-    // Mock signup success
-    toast.success("Account created successfully");
-    navigate("/profile");
+  
+  const onSignupSubmit = async (values: SignupFormValues) => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/signup`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: values.name,
+          username: values.username, // or actual username field
+          password: values.password,
+          bio: "New user",
+          avatar: "",
+          level: "Beginner"
+        }),
+      });
+  
+      if (!res.ok) throw new Error((await res.json()).detail);
+  
+      toast.success("Account created successfully");
+      navigate("/profile");
+    } catch (err) {
+      toast.error(err.message);
+    }
   };
-
-  return (
+    return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-background to-background/90 px-4 py-10">
       <Link to="/" className="absolute top-6 left-6 flex items-center text-gray-400 hover:text-white transition-colors">
         <ArrowLeft className="mr-2 h-5 w-5" />
@@ -114,7 +143,7 @@ const Auth = () => {
               <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-5">
                 <FormField
                   control={loginForm.control}
-                  name="email"
+                  name="username"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Email</FormLabel>
@@ -244,7 +273,7 @@ const Auth = () => {
                 />
                 <FormField
                   control={signupForm.control}
-                  name="email"
+                  name="username"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Email</FormLabel>
