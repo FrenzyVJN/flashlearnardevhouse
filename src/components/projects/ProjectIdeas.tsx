@@ -1,24 +1,52 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import ProjectCard from './ProjectCard';
+import { Skeleton } from '@/components/ui/skeleton';
+
+// Mock data for project ideas
+const mockProjects = [
+  {
+    id: 1,
+    title: "Rocket Pencil Holder",
+    description: "Transform cardboard tubes into an awesome rocket-shaped pencil holder with customizable fins and colors.",
+    difficulty: "Easy" as const,
+    timeRequired: "1 hour",
+    imageUrl: "https://images.unsplash.com/photo-1517420704952-d9f39e95b43e?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60",
+    rating: 4.7,
+    materials: ["Cardboard tube", "Paint", "Scissors", "Glue"]
+  },
+  {
+    id: 6,
+    title: "Magazine Paper Beads",
+    description: "Roll colorful magazine pages into beautiful beads for jewelry making.",
+    difficulty: "Easy" as const,
+    timeRequired: "1 hour",
+    imageUrl: "https://images.unsplash.com/photo-1605100804763-247f67b3557e?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60",
+    rating: 4.6,
+    materials: ["Old magazines", "Glue", "Toothpicks", "String"]
+  }
+];
 
 const ProjectIdeas = () => {
   const location = useLocation();
+  const [projects, setProjects] = useState(mockProjects);
   const [generationDone, setGenerationDone] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [filteredProjects, setFilteredProjects] = useState([]);
   const [allProjects, setAllProjects] = useState([]);
   const [activeFilter, setActiveFilter] = useState<string>('all');
+  const apiCallMade = useRef(false);
   
   const scannedItems = location.state?.items || [];
   
   useEffect(() => {
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 1500);
-  
-    if (!generationDone && scannedItems.length > 0) {
+    // Only run this effect if we have scanned items and haven't made the API call yet
+    if (scannedItems.length > 0 && !apiCallMade.current) {
       const generateProjects = async () => {
+        // Set loading state
+        setIsLoading(true);
+        apiCallMade.current = true;
+        
         try {
           const itemsString = scannedItems.join(', ');
           
@@ -62,26 +90,39 @@ const ProjectIdeas = () => {
           const projectsJson = jsonMatch ? jsonMatch[0] : projectsText;
           
           const generatedProjects = JSON.parse(projectsJson);
-          setFilteredProjects(generatedProjects);
-          setAllProjects(generatedProjects);
-          setGenerationDone(true);
+          setProjects(generatedProjects);
+          
+          // Apply active filter to the new projects
+          if (activeFilter === 'all') {
+            setFilteredProjects(generatedProjects);
+          } else {
+            setFilteredProjects(generatedProjects.filter(project => 
+              project.difficulty.toLowerCase() === activeFilter
+            ));
+          }
         } catch (error) {
           console.error("Error generating projects:", error);
-          setGenerationDone(true);
+          // Fallback to mock projects on error
+          setProjects(mockProjects);
+          setAllProjects(generatedProjects);
+          setFilteredProjects(mockProjects);
+        } finally {
+          setIsLoading(false);
         }
       };
   
       generateProjects();
     }
-  }, [generationDone, scannedItems]);
+  }, [scannedItems]);
   
+  // Handle filtering when activeFilter changes
   useEffect(() => {
     if (activeFilter != 'all') {
       setFilteredProjects(allProjects.filter(project => 
         project.difficulty.toLowerCase() === activeFilter
       ));
     }
-  }, [activeFilter]);
+  }, [activeFilter, projects]);
   
   const difficultyFilters = ['all', 'easy', 'medium', 'hard'];
   
@@ -118,6 +159,7 @@ const ProjectIdeas = () => {
                     : 'bg-white/5 text-gray-400 hover:bg-white/10'
                 }`}
                 onClick={() => setActiveFilter(filter)}
+                disabled={isLoading}
               >
                 {filter.charAt(0).toUpperCase() + filter.slice(1)}
               </button>
@@ -129,10 +171,7 @@ const ProjectIdeas = () => {
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[1, 2, 3, 4, 5, 6].map((item) => (
-            <div 
-              key={item} 
-              className="bg-midnight-900/50 rounded-xl h-[320px] animate-pulse"
-            />
+            <ProjectCardSkeleton key={item} />
           ))}
         </div>
       ) : (
@@ -146,6 +185,24 @@ const ProjectIdeas = () => {
           ))}
         </div>
       )}
+    </div>
+  );
+};
+
+// Skeleton loader component using shadcn UI
+const ProjectCardSkeleton = () => {
+  return (
+    <div className="glass-morphism rounded-xl overflow-hidden flex flex-col h-full animate-pulse">
+      <Skeleton className="w-full h-48 bg-midnight-800/50" />
+      <div className="p-4 space-y-3">
+        <Skeleton className="h-6 w-3/4 bg-midnight-800/50" />
+        <Skeleton className="h-4 w-full bg-midnight-800/30" />
+        <Skeleton className="h-4 w-5/6 bg-midnight-800/30" />
+        <div className="flex gap-2 mt-4">
+          <Skeleton className="h-6 w-16 rounded-full bg-midnight-800/50" />
+          <Skeleton className="h-6 w-20 rounded-full bg-midnight-800/50" />
+        </div>
+      </div>
     </div>
   );
 };
