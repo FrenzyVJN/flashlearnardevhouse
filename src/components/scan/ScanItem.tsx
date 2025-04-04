@@ -29,7 +29,6 @@ const ScanItem = () => {
   
     try {
       const base64Image = uploadedImage.split(',')[1];
-      console.log("whereweaedss");
       
       const GEMINI_API_KEY = "AIzaSyD-UHTng5Gh82qHDTuoxxZiM_nSNbDXqr8";
       const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
@@ -44,7 +43,7 @@ const ScanItem = () => {
             {
               parts: [
                 {
-                  text: "Identify all objects visible in this image and return them as a comma-separated list of simple terms."
+                  text: "Identify all objects visible in this image and return them as a comma-separated list of simple terms. ONLY RETURN THE LIST DO NOT SEND ANYTHING ELSE."
                 },
                 {
                   inline_data: {
