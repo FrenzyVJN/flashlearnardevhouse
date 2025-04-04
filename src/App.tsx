@@ -13,6 +13,7 @@ import Community from "./pages/Community";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 import LogSign from "./pages/LogSign"
+import Auth from "./pages/Auth";
 
 const queryClient = new QueryClient();
 
@@ -31,6 +32,7 @@ const App = () => {
             <Route path="/ar/:id" element={<AR />} />
             <Route path="/community" element={<Community />} />
             <Route path="/logs" element={<LogSign />} />
+            <Route path="/auth" element={<Auth />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

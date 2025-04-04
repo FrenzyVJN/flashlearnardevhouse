@@ -277,6 +277,8 @@ const ProjectDetails = () => {
       
       {/* Community feedback section */}
       <div className="mb-12 grid md:grid-cols-2 gap-8">
+      <ProjectAIChat projectTitle={projectData.title} />
+      
         <div>
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-xl font-bold">Community Feedback</h2>
@@ -325,8 +327,6 @@ const ProjectDetails = () => {
             ))}
           </div>
         </div>
-        
-        <ProjectAIChat projectTitle={projectData.title} />
       </div>
     </div>
   );
