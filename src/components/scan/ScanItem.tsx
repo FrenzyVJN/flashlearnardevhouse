@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Camera, Upload, RefreshCw, ArrowRight } from 'lucide-react';
 import { AnimatedButton } from '@/components/ui/AnimatedButton';
@@ -28,33 +27,20 @@ const ScanItem = () => {
     setIsScanning(true);
   
     try {
-      const base64Image = uploadedImage.split(',')[1];
+      // Convert base64 to blob
+      const base64Response = await fetch(uploadedImage);
+      const blob = await base64Response.blob();
       
-      const GEMINI_API_KEY = "AIzaSyD-UHTng5Gh82qHDTuoxxZiM_nSNbDXqr8";
-      const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
+      // Create a file from the blob
+      const file = new File([blob], "image.jpg", { type: "image/jpeg" });
       
-      const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
+      // Create FormData and append the file
+      const formData = new FormData();
+      formData.append("file", file);
+      
+      const response = await fetch(`http://127.0.0.1:8000/detect/`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [
-                {
-                  text: "Identify all objects visible in this image and return them as a comma-separated list of simple terms. ONLY RETURN THE LIST DO NOT SEND ANYTHING ELSE."
-                },
-                {
-                  inline_data: {
-                    mime_type: "image/jpeg",
-                    data: base64Image
-                  }
-                }
-              ]
-            }
-          ]
-        })
+        body: formData,
       });
   
       if (!response.ok) {
@@ -62,12 +48,8 @@ const ScanItem = () => {
         throw new Error(`API error: ${JSON.stringify(errorData)}`);
       }
   
-      const data = await response.json();
-      
-      const itemsText = data.candidates[0].content.parts[0].text;
-      const itemsList = itemsText.split(',').map(item => item.trim());
-      
-      setIdentifiedItems(itemsList);
+      const items = await response.json();
+      setIdentifiedItems(items);
     } catch (error) {
       console.error("Error analyzing image:", error);
       setIdentifiedItems(["Error identifying items"]);
