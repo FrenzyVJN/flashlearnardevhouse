@@ -3,89 +3,38 @@ import { useState, useEffect } from 'react';
 import { Search, MessageCircle, Star, Filter, Users, Heart, Share2 } from 'lucide-react';
 import { AnimatedCard } from '@/components/ui/AnimatedCard';
 
-// Mock data for community posts
-const communityPosts = [
-  {
-    id: 1,
-    user: {
-      name: 'Sarah Johnson',
-      avatar: 'https://i.pravatar.cc/150?img=5',
-      level: 'Expert Maker'
-    },
-    title: 'Added LED lights to my Rocket Pencil Holder!',
-    content: 'I modified the Rocket Pencil Holder project by adding small LED lights inside. It looks amazing in the dark!',
-    image: 'https://images.unsplash.com/photo-1555448248-2571daf6344b?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60',
-    likes: 58,
-    comments: 12,
-    projectName: 'Rocket Pencil Holder',
-    tags: ['modification', 'lighting', 'creative']
-  },
-  {
-    id: 2,
-    user: {
-      name: 'Michael Chen',
-      avatar: 'https://i.pravatar.cc/150?img=8',
-      level: 'Hobbyist'
-    },
-    title: 'Need help with my Magazine Mosaic project',
-    content: 'I\'m having trouble getting the magazine pieces to stick properly to my canvas. Any suggestions on what glue works best?',
-    image: 'https://images.unsplash.com/photo-1626908013351-800ddd734b8a?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60',
-    likes: 23,
-    comments: 34,
-    projectName: 'Magazine Mosaic Wall Art',
-    tags: ['help', 'adhesive', 'mosaic']
-  },
-  {
-    id: 3,
-    user: {
-      name: 'Alejandra Torres',
-      avatar: 'https://i.pravatar.cc/150?img=3',
-      level: 'Upcycling Pro'
-    },
-    title: 'My mini greenhouse collection is growing!',
-    content: 'Started with one mini greenhouse from plastic bottles, and now I have a whole windowsill garden. Growing herbs and small plants.',
-    image: 'https://images.unsplash.com/photo-1614041178864-e3342916afc4?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60',
-    likes: 87,
-    comments: 19,
-    projectName: 'Mini Greenhouse',
-    tags: ['gardening', 'sustainable', 'collection']
-  },
-  {
-    id: 4,
-    user: {
-      name: 'David Williams',
-      avatar: 'https://i.pravatar.cc/150?img=12',
-      level: 'Beginner'
-    },
-    title: 'First time trying the Bottle Cap Necklace project',
-    content: 'This was my first DIY jewelry project and I\'m really happy with how it turned out! Used caps from my favorite craft beers.',
-    image: 'https://images.unsplash.com/photo-1555864330-77c197430a7e?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60',
-    likes: 42,
-    comments: 8,
-    projectName: 'Bottle Cap Necklace',
-    tags: ['beginner', 'jewelry', 'upcycled']
-  }
-];
-
 const CommunityHub = () => {
-  const [posts, setPosts] = useState(communityPosts);
+  const [posts, setPosts] = useState([]);
+  const [visiblePosts, setVisiblePosts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState('all');
-  
+
   useEffect(() => {
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 1500);
+    const fetchPosts = async () => {
+      try {
+        const res = await fetch('http://localhost:8000/projects');
+        const data = await res.json();
+        if (data && data.projects) {
+          setPosts(data.projects);
+          setVisiblePosts(data.projects);
+        }
+      } catch (error) {
+        console.error("Failed to fetch posts:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchPosts();
   }, []);
   
-  // Filter posts based on active filter
   useEffect(() => {
     if (activeFilter === 'all') {
-      setPosts(communityPosts);
+      setVisiblePosts(posts);
     } else if (activeFilter === 'questions') {
-      setPosts(communityPosts.filter(post => post.tags.includes('help')));
+      setVisiblePosts(posts.filter(post => post.tags.includes('help')));
     } else if (activeFilter === 'projects') {
-      setPosts(communityPosts.filter(post => !post.tags.includes('help')));
+      setVisiblePosts(posts.filter(post => !post.tags.includes('help')));
     }
   }, [activeFilter]);
   
@@ -153,7 +102,7 @@ const CommunityHub = () => {
         </div>
       ) : (
         <div className="space-y-6">
-          {posts.map((post, index) => (
+          {visiblePosts.map((post, index) => (
             <AnimatedCard 
               key={post.id} 
               withBorder 

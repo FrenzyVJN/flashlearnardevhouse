@@ -59,7 +59,7 @@ export default function ProjectPublishForm() {
         tags: form.tags.split(",").map((t) => t.trim()),
       }
 
-      const res = await fetch("http://localhost:8000/projects", {
+      const res = await fetch("http://localhost:8000/publish", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

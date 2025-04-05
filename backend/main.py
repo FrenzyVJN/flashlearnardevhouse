@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException, Request
 from pydantic import BaseModel
-from pymongo import MongoClient
+from pymongo import DESCENDING, MongoClient
 from fastapi.middleware.cors import CORSMiddleware
 from datetime import datetime
 import hashlib
@@ -90,7 +90,7 @@ async def login(user: UserLogin):
 
     return {"message": "User Login successfully", "user": sanitized_user}
 
-@app.post("/projects")
+@app.post("/publish")
 def add_project(project: ProjectPost):
     new_project = project.dict()
     new_project["likes"] = 0
@@ -98,3 +98,14 @@ def add_project(project: ProjectPost):
     result = projects_collection.insert_one(new_project)
     
     return {"message": "Project added"}
+
+@app.get("/projects")
+def get_latest_projects():
+    projects_cursor = projects_collection.find().sort("_id", DESCENDING).limit(10)
+    projects = []
+
+    for project in projects_cursor:
+        project["_id"] = str(project["_id"])
+        projects.append(project)
+
+    return {"projects": projects}
