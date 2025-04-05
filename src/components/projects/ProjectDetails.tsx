@@ -83,7 +83,13 @@ const ProjectDetails = () => {
   const [activeStep, setActiveStep] = useState(0);
   const [projectData, setProjectData] = useState<ProjectCardProps>();
 
+<<<<<<< Updated upstream
   
+=======
+  const projectData: ProjectCardProps = location.state && location.state.project 
+    ? JSON.parse(location.state.project) 
+    : projectDataMock;
+>>>>>>> Stashed changes
   
   useEffect(() => {
     const cachedProjects = JSON.parse(localStorage.getItem("cachedProjects"));
