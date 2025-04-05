@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+pydantic
+pymongo
+python-multipart
+agnostic-ai
+google-generativeai
+tavily-python
+aiofiles
