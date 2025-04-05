@@ -5,6 +5,16 @@ from fastapi.middleware.cors import CORSMiddleware
 from datetime import datetime
 import hashlib
 from typing import List
+from agno.agent import Agent
+from agno.models.google.gemini import Gemini
+from typing import List
+from pydantic import BaseModel, Field
+from typing import Annotated
+import asyncio
+from fastapi import FastAPI, File, UploadFile
+
+from agno.media import Image
+from agno.tools.tavily import TavilyTools
 
 # MongoDB setup (replace with your actual Atlas URI)
 client = MongoClient("mongodb+srv://FrenzyVJN:adminadmin@edita.6tl7jsm.mongodb.net/?appName=Edita")
@@ -91,7 +101,7 @@ async def login(user: UserLogin):
     return {"message": "User Login successfully", "user": sanitized_user}
 
 @app.post("/publish")
-def add_project(project: ProjectPost):
+async def add_project(project: ProjectPost):
     new_project = project.dict()
     new_project["likes"] = 0
     new_project["comments"] = 0
@@ -100,7 +110,7 @@ def add_project(project: ProjectPost):
     return {"message": "Project added"}
 
 @app.get("/projects")
-def get_latest_projects():
+async def get_latest_projects():
     projects_cursor = projects_collection.find().sort("_id", DESCENDING).limit(10)
     projects = []
 
@@ -109,3 +119,42 @@ def get_latest_projects():
         projects.append(project)
 
     return {"projects": projects}
+
+
+class Objects(BaseModel):
+    item: List[str] = Field(..., description="name of the item")
+
+class project(BaseModel):
+    name: str = Field(..., description="name of the project")
+    description: str = Field(..., description="description of the project")
+    difficulty: str = Field(..., description="difficulty of the project")
+    instructions: List[str] = Field(..., description="instructions to make the project")
+    references: List[str] = Field(..., description="references to make the project")
+
+class Projects(BaseModel):
+    projects: List[project] = Field(..., description="list of projects")
+
+detect = Agent(
+        search_knowledge=True,
+        model=Gemini(id="gemini-2.0-flash", api_key="AIzaSyDd80SlBKdNeyBF5qUctny6Fp80iEiftOg"),
+        tools=[TavilyTools(api_key="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")],
+        description="you are an image detection model",
+        instructions=["list the items in the image",
+                    "ignore insignificant items like connecting wires and screws",
+                    "be as specific as possible"],
+        response_model=Objects
+)
+
+@app.post("/detect/")
+def detect_objects(file: UploadFile):
+    image = file.file.read()
+    objs = detect.run(
+            "list the items in this image",
+            images=[
+                Image(
+                    content=image,
+                )
+            ]
+        )
+    return objs.content.item
+    
