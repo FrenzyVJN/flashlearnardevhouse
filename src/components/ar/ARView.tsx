@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Smartphone, ChevronLeft, ChevronRight, Play, Pause, RefreshCw, Camera, Check, Mic, MicOff } from 'lucide-react';
+import { ArrowLeft, Smartphone, ChevronLeft, ChevronRight, Play, Pause, RefreshCw, Camera, Check, Mic, MicOff, Wifi, WifiOff } from 'lucide-react';
 import { AnimatedButton } from '@/components/ui/AnimatedButton';
 
 // Mock step data for AR instructions
@@ -47,6 +47,7 @@ const ARView = () => {
   const [audioWorkletNode, setAudioWorkletNode] = useState<AudioWorkletNode | null>(null);
   const [isVoiceChatActive, setIsVoiceChatActive] = useState(false);
   const [chatMessages, setChatMessages] = useState<string[]>([]);
+  const [wsStatus, setWsStatus] = useState<'connecting' | 'connected' | 'disconnected' | 'error'>('disconnected');
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -56,6 +57,9 @@ const ARView = () => {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const pcmDataRef = useRef<number[]>([]);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const maxReconnectAttempts = 5;
+  const reconnectAttemptsRef = useRef(0);
   
   // Handle initial loading of AR resources
   useEffect(() => {
@@ -257,18 +261,32 @@ const ARView = () => {
     }, 300);
   };
   
-  // Initialize WebSocket connection
+  // Initialize WebSocket connection with reconnection logic
   useEffect(() => {
     const connectWebSocket = () => {
+      if (reconnectAttemptsRef.current >= maxReconnectAttempts) {
+        console.error("Max reconnection attempts reached");
+        setWsStatus('error');
+        return;
+      }
+
+      setWsStatus('connecting');
       const ws = new WebSocket("ws://localhost:9080");
       
       ws.onopen = () => {
         console.log("WebSocket connected");
-        // Send initial setup message
+        reconnectAttemptsRef.current = 0;
+        setWsStatus('connected');
+        // Send initial setup message with correct configuration
         const setupMessage = {
           setup: {
-            generation_config: { response_modalities: ["TEXT"] },
-          },
+            generation_config: {
+              temperature: 0.9,
+              top_p: 1,
+              top_k: 32,
+              max_output_tokens: 2048
+            }
+          }
         };
         ws.send(JSON.stringify(setupMessage));
       };
@@ -285,10 +303,23 @@ const ARView = () => {
 
       ws.onerror = (error) => {
         console.error("WebSocket error:", error);
+        setWsStatus('error');
+        ws.close();
       };
 
       ws.onclose = () => {
         console.log("WebSocket closed");
+        setWsStatus('disconnected');
+        
+        // Attempt to reconnect after a delay
+        if (reconnectTimeoutRef.current) {
+          clearTimeout(reconnectTimeoutRef.current);
+        }
+        
+        reconnectTimeoutRef.current = setTimeout(() => {
+          reconnectAttemptsRef.current++;
+          connectWebSocket();
+        }, 3000); // Wait 3 seconds before reconnecting
       };
 
       wsRef.current = ws;
@@ -303,6 +334,9 @@ const ARView = () => {
       }
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
+      }
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
       }
     };
   }, []);
@@ -647,6 +681,24 @@ const ARView = () => {
         {chatMessages.map((message, index) => (
           <p key={index} className="text-white text-sm mb-2">{message}</p>
         ))}
+      </div>
+
+      {/* Add WebSocket status indicator */}
+      <div className="absolute top-6 right-6 flex items-center space-x-2 z-50">
+        <div className={`flex items-center space-x-2 px-3 py-1 rounded-full ${
+          wsStatus === 'connected' ? 'bg-green-500/20 text-green-400' :
+          wsStatus === 'connecting' ? 'bg-yellow-500/20 text-yellow-400' :
+          wsStatus === 'error' ? 'bg-red-500/20 text-red-400' :
+          'bg-gray-500/20 text-gray-400'
+        }`}>
+          {wsStatus === 'connected' ? <Wifi className="w-4 h-4" /> : <WifiOff className="w-4 h-4" />}
+          <span className="text-sm font-medium">
+            {wsStatus === 'connected' ? 'Connected' :
+             wsStatus === 'connecting' ? 'Connecting...' :
+             wsStatus === 'error' ? 'Connection Error' :
+             'Disconnected'}
+          </span>
+        </div>
       </div>
     </div>
   );
