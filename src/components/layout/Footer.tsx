@@ -21,7 +21,7 @@ const Footer = () => {
               Join our community of makers and upcyclers today.
             </p>
             <div className="flex space-x-4 mt-6">
-              <a href="#" className="text-gray-400 hover:text-electric-400 transition-colors">
+              <a href="http://github.com/FrenzyVJN/flashlearnardevhouse/" className="text-gray-400 hover:text-electric-400 transition-colors">
                 <Github className="w-5 h-5" />
               </a>
               <a href="#" className="text-gray-400 hover:text-electric-400 transition-colors">
