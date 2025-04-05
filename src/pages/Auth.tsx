@@ -24,16 +24,29 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { UserData } from '@/lib/types';
+
+// Mock user database (replace with localStorage)
+const MOCK_USERS = [
+  {
+    name: "Demo User",
+    username: "demo@example.com",
+    password: "password123",
+    bio: "Demo account",
+    avatar: "",
+    level: "Beginner"
+  }
+];
 
 const loginSchema = z.object({
-  email: z.string().email({ message: "Please enter a valid email address" }),
+  username: z.string().email({ message: "Please enter a valid email address" }),
   password: z.string().min(6, { message: "Password must be at least 6 characters long" }),
   rememberMe: z.boolean().optional(),
 });
 
 const signupSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters long" }),
-  email: z.string().email({ message: "Please enter a valid email address" }),
+  username: z.string().email({ message: "Please enter a valid email address" }),
   password: z.string().min(6, { message: "Password must be at least 6 characters long" }),
   confirmPassword: z.string(),
   termsAccepted: z.boolean().refine(val => val === true, {
@@ -47,6 +60,35 @@ const signupSchema = z.object({
 type LoginFormValues = z.infer<typeof loginSchema>;
 type SignupFormValues = z.infer<typeof signupSchema>;
 
+// Function to generate a simple JWT
+const generateJWT = (user) => {
+  // Create a JWT header
+  const header = {
+    alg: "HS256",
+    typ: "JWT"
+  };
+
+  // Create a JWT payload with user data and expiration
+  const payload = {
+    sub: user.username,
+    name: user.name,
+    exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60), // 24 hours from now
+    iat: Math.floor(Date.now() / 1000)
+  };
+
+  // In a real app, you'd use a proper JWT library
+  // For this static example, we'll base64 encode the parts
+  const base64Header = btoa(JSON.stringify(header));
+  const base64Payload = btoa(JSON.stringify(payload));
+  
+  // In a real app, this would be signed with a secret key
+  // Here we're just concatenating with a dummy signature
+  const signature = btoa("static_signature_for_demo");
+  
+  // Combine all parts to form the JWT
+  return `${base64Header}.${base64Payload}.${signature}`;
+};
+
 const Auth = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -55,7 +97,7 @@ const Auth = () => {
   const loginForm = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: "",
+      username: "",
       password: "",
       rememberMe: false,
     },
@@ -65,27 +107,75 @@ const Auth = () => {
     resolver: zodResolver(signupSchema),
     defaultValues: {
       name: "",
-      email: "",
+      username: "",
       password: "",
       confirmPassword: "",
       termsAccepted: false,
     },
   });
-
-  const onLoginSubmit = (values: LoginFormValues) => {
-    console.log("Login form submitted:", values);
-    // Mock login success
-    toast.success("Login successful");
-    navigate("/profile");
+  
+  // Get stored users or initialize with mock data
+  const getUsers = () => {
+    const storedUsers = localStorage.getItem('users');
+    return storedUsers ? JSON.parse(storedUsers) : MOCK_USERS;
   };
 
-  const onSignupSubmit = (values: SignupFormValues) => {
-    console.log("Signup form submitted:", values);
-    // Mock signup success
-    toast.success("Account created successfully");
-    navigate("/profile");
+  const onLoginSubmit = async (values: LoginFormValues) => {
+    try {
+      const res = await fetch('http://localhost:8000/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username: values.username,
+          password: values.password,
+        }),
+      });
+  
+      const data = await res.json();
+  
+      if (!res.ok) throw new Error(data.detail);
+  
+      alert("Login successful!");
+      console.log(data)
+      localStorage.setItem("currentUser", JSON.stringify(data.user));
+  
+      if (!values.rememberMe) {
+        localStorage.setItem('tokenExpiry', (Date.now() + 24 * 60 * 60 * 1000).toString());
+      }
+  
+      navigate("/profile");
+    } catch (err: any) {
+      toast.error("Login failed: " + err.message);
+    }
   };
-
+  
+  
+  const onSignupSubmit = async (values: SignupFormValues) => {
+    console.log(values)
+    try {
+      const res = await fetch('http://localhost:8000/signup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(values)
+      });
+  
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail);
+  
+      localStorage.setItem("authToken", generateJWT(data.user));
+      localStorage.setItem("currentUser", JSON.stringify(data.user));
+  
+      toast.success("Account created successfully");
+    } catch (err: any) {
+      toast.error(err.message);
+    }
+  };
+  
+  
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-background to-background/90 px-4 py-10">
       <Link to="/" className="absolute top-6 left-6 flex items-center text-gray-400 hover:text-white transition-colors">
@@ -114,7 +204,7 @@ const Auth = () => {
               <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-5">
                 <FormField
                   control={loginForm.control}
-                  name="email"
+                  name="username"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Email</FormLabel>
@@ -244,7 +334,7 @@ const Auth = () => {
                 />
                 <FormField
                   control={signupForm.control}
-                  name="email"
+                  name="username"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Email</FormLabel>

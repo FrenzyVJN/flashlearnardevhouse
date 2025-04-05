@@ -1,18 +1,27 @@
 import { useState } from 'react'
-import users from '../data/users.json'
 
 export default function Login() {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
 
-  const handleLogin = () => {
-    const data = JSON.parse(localStorage.getItem("users") || "[]")
-    const user = data.find((u: any) => u.username === username && u.password === password)
-    if (user) {
+  const handleLogin = async () => {
+    try {
+      const res = await fetch('http://localhost:8000/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username, password }),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) throw new Error(data.detail)
+
       alert("Login successful!")
-      localStorage.setItem("currentUser", JSON.stringify(user))
-    } else {
-      alert("Invalid credentials.")
+      localStorage.setItem("currentUser", JSON.stringify(data))
+    } catch (err: any) {
+      alert("Login failed: " + err.message)
     }
   }
 

@@ -1,41 +1,76 @@
-import os
-import google.generativeai as genai
-from flask import Flask, request, jsonify
-from flask_cors import CORS
-from PIL import Image
-import base64
+from fastapi import FastAPI, HTTPException, Request
+from pydantic import BaseModel
+from pymongo import MongoClient
+from fastapi.middleware.cors import CORSMiddleware
+from datetime import datetime
+import hashlib
 
-app = Flask(__name__)
-CORS(app)
+# MongoDB setup (replace with your actual Atlas URI)
+client = MongoClient("mongodb+srv://FrenzyVJN:adminadmin@edita.6tl7jsm.mongodb.net/?appName=Edita")
+db = client["flashlearnar"]
+users_collection = db["users"]
 
-GENAI_API_KEY = "AIzaSyCV6mvQhiIJaJXqso1uEXGogbreTrqa9xA"
-genai.configure(api_key=GENAI_API_KEY)
+app = FastAPI()
 
-@app.route("/analyze-image", methods=["POST"])
-def analyze_image():
-    if "image" not in request.files:
-        return jsonify({"error": "No image uploaded"}), 400
+# CORS for frontend interaction
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Or your frontend URL
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-    image_file = request.files["image"]
+# Models
+class UserSignup(BaseModel):
+    name: str
+    username: str
+    password: str
+    confirmPassword: str
+    termsAccepted: bool
+
+class UserLogin(BaseModel):
+    username: str
+    password: str
+
+# Utils
+def hash_password(password: str) -> str:
+    return hashlib.sha256(password.encode()).hexdigest()
+
+@app.post("/signup")
+async def signup(user: UserSignup):
+    print(user)
+    if users_collection.find_one({"username": user.username}):
+        raise HTTPException(status_code=400, detail="Username already exists")
+
+    user_dict = user.dict()
+    user_dict.update({
+        "bio": "Add your bio here!",
+        "avatar": "https://http.cat/images/418.jpg",
+        "level": "",
+        "projects": 0,
+        "followers": 0,
+        "following": 0,
+        "joinedDate": datetime.utcnow().isoformat(),
+        "badges": [],
+        "completedProjects": [],
+        "savedItems": [],
+        "activityFeed": []
+    })
+
+    result = users_collection.insert_one(user_dict)
+    user_dict["_id"] = str(result.inserted_id)
+    return {"message": "User registered successfully", "user": user_dict}
+
+@app.post("/login")
+async def login(user: UserLogin):
+    db_user = users_collection.find_one({"username": user.username})
+    if not db_user or db_user["password"] != user.password:
+        raise HTTPException(status_code=401, detail="Invalid username or password")
     
-    image = Image.open(image_file)
-    image.save("temp.jpg")
-    with open("temp.jpg", "rb") as img_file:
-        image_data = base64.b64encode(img_file.read()).decode("utf-8")
+    sanitized_user = {
+        key: value for key, value in db_user.items()
+        if key not in ("_id", "password")
+    }
 
-    try:
-        model = genai.GenerativeModel("gemini-1.5-pro-vision")
-        response = model.generate_content([
-            "List the objects present in this image in a comma-separated format.",
-            {"mime_type": "image/jpeg", "data": image_data}
-        ])
-
-        identified_items = response.text.split(",") if response.text else []
-
-        return jsonify({"items": identified_items})
-
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-if __name__ == "__main__":
-    app.run(debug=True, port=5000)
+    return {"message": "User Login successfully", "user": sanitized_user}
