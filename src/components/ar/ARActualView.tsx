@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useParams } from 'react-router-dom';
 import styles from './ARActualView.module.css';
 
-interface ProjectDetails {
+interface Project {
   instructions: string;
   steps: Array<{
     description: string;
@@ -11,6 +11,7 @@ interface ProjectDetails {
 }
 
 const ARActualView: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isPaused, setIsPaused] = useState(false);
@@ -18,7 +19,15 @@ const ARActualView: React.FC = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const location = useLocation();
-  const projectDetails = location.state as ProjectDetails;
+  const [isLoading, setIsLoading] = useState(true);
+  const [project, setProject] = useState<Project | null>(null);
+
+  useEffect(() => {
+    setProject(localStorage.getItem('currentProject') ? JSON.parse(localStorage.getItem('currentProject')!) : null);
+    setTimeout(() => {
+      setIsLoading(false);
+    }, 300);
+  }, []);
 
   useEffect(() => {
     const initializeCamera = async () => {
@@ -61,7 +70,7 @@ const ARActualView: React.FC = () => {
   };
 
   const goToNextStep = () => {
-    if (projectDetails && currentStepIndex < projectDetails.steps.length - 1) {
+    if (project && currentStepIndex < project.steps.length - 1) {
       setCurrentStepIndex(prev => prev + 1);
     }
   };
@@ -73,10 +82,10 @@ const ARActualView: React.FC = () => {
   };
 
   const analyzeCurrentStep = async () => {
-    console.log("Analyzing current step", projectDetails);
-    if (!projectDetails || isAnalyzing) return;
+    console.log("Analyzing current step", project);
+    if (!project || isAnalyzing) return;
 
-    const currentStep = projectDetails.steps[currentStepIndex];
+    const currentStep = project.steps[currentStepIndex];
     if (!currentStep) return;
 
     setIsAnalyzing(true);
@@ -102,7 +111,7 @@ const ARActualView: React.FC = () => {
         body: JSON.stringify({
           image: imageData,
           instructions: currentStep.description,
-          projectContext: projectDetails.instructions
+          projectContext: project.instructions
         })
       });
 
@@ -116,7 +125,7 @@ const ARActualView: React.FC = () => {
     }
   };
 
-  const currentStep = projectDetails?.steps[currentStepIndex];
+  const currentStep = project?.steps[currentStepIndex];
 
   return (
     <div className={styles.arActualView}>
@@ -152,10 +161,10 @@ const ARActualView: React.FC = () => {
           </button>
         </div>
       </div>
-      {projectDetails && (
+      {project && (
         <div className={styles.projectInfo}>
           <h3>Project Instructions</h3>
-          <p className={styles.instructions}>{projectDetails.instructions}</p>
+          <p className={styles.instructions}>{project.instructions}</p>
           
           <div className={styles.stepNavigation}>
             <button 
@@ -166,12 +175,12 @@ const ARActualView: React.FC = () => {
               Previous Step
             </button>
             <span className={styles.stepCounter}>
-              Step {currentStepIndex + 1} of {projectDetails.steps.length}
+              Step {currentStepIndex + 1} of {project.steps.length}
             </span>
             <button 
               className={styles.navButton}
               onClick={goToNextStep}
-              disabled={currentStepIndex === projectDetails.steps.length - 1}
+              disabled={currentStepIndex === project.steps.length - 1}
             >
               Next Step
             </button>
@@ -183,7 +192,7 @@ const ARActualView: React.FC = () => {
           </div>
 
           <div className={styles.steps}>
-            {projectDetails.steps.map((step, index) => (
+            {project.steps.map((step, index) => (
               <div 
                 key={index} 
                 className={`${styles.step} ${step.completed ? styles.completed : ''} ${index === currentStepIndex ? styles.active : ''}`}

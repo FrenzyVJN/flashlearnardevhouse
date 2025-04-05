@@ -96,6 +96,7 @@ const ProjectDetails = () => {
       setProjectData(cachedProjects[curr - 1])
       console.log("Using cached projects");
     }
+    localStorage.setItem("currentProject", JSON.stringify(cachedProjects[curr - 1]));
     setTimeout(() => {
       setIsLoading(false);
     }, 300);

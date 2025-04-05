@@ -16,12 +16,6 @@ from fastapi import FastAPI, File, UploadFile
 from agno.media import Image
 from agno.tools.tavily import TavilyTools
 
-# MongoDB setup (replace with your actual Atlas URI)
-client = MongoClient("mongodb+srv://FrenzyVJN:adminadmin@edita.6tl7jsm.mongodb.net/?appName=Edita")
-db = client["flashlearnar"]
-users_collection = db["users"]
-projects_collection = db["Projects"]
-
 app = FastAPI()
 
 # CORS for frontend interaction
@@ -32,6 +26,13 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# MongoDB setup (replace with your actual Atlas URI)
+client = MongoClient("mongodb+srv://FrenzyVJN:adminadmin@edita.6tl7jsm.mongodb.net/?appName=Edita")
+db = client["flashlearnar"]
+users_collection = db["users"]
+projects_collection = db["Projects"]
+
 
 # Models
 class UserSignup(BaseModel):
