@@ -3,7 +3,7 @@ uvicorn
 pydantic
 pymongo
 python-multipart
-agnostic-ai
+agno
 google-generativeai
 tavily-python
 aiofiles
