@@ -7,7 +7,7 @@ from google import genai
 import base64
 
 # Load API key from environment
-os.environ['GOOGLE_API_KEY'] = 'AIzaSyDd80SlBKdNeyBF5qUctny6Fp80iEiftOg'
+os.environ['GOOGLE_API_KEY'] = 'AIzaSyCvpPjYHKFKGgUNdapYZpVPInkoSFjfmJI'
 MODEL = "gemini-2.0-flash-exp"  # use your model ID
 
 client = genai.Client(

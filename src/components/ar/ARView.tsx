@@ -129,7 +129,11 @@ const ARView = () => {
       if (ctx) {
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
         
-        // Convert canvas to blob and create URL
+        // Convert canvas to base64
+        const base64Frame = canvas.toDataURL('image/jpeg', 0.95).split(',')[1];
+        setCurrentFrameB64(base64Frame);
+        
+        // Also create blob URL for display
         canvas.toBlob((blob) => {
           if (blob) {
             // Clean up previous blob URL if exists
@@ -343,32 +347,60 @@ const ARView = () => {
 
   // Initialize audio context and worklet
   const initializeAudioContext = async () => {
-    if (audioContextRef.current) return;
+    try {
+      if (audioContextRef.current) {
+        console.log("Audio context already initialized");
+        return;
+      }
 
-    const context = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
-    await context.audioWorklet.addModule("/pcm-processor.js");
-    const workletNode = new AudioWorkletNode(context, "pcm-processor");
-    workletNode.connect(context.destination);
+      console.log("Initializing audio context...");
+      const context = new (window.AudioContext || (window as any).webkitAudioContext)({ 
+        sampleRate: 24000,
+        latencyHint: 'interactive'
+      });
 
-    audioContextRef.current = context;
-    setAudioContext(context);
-    setAudioWorkletNode(workletNode);
+      console.log("Loading PCM processor worklet...");
+      await context.audioWorklet.addModule("/pcm-processor.js");
+      
+      console.log("Creating worklet node...");
+      const workletNode = new AudioWorkletNode(context, "pcm-processor");
+      
+      console.log("Connecting worklet to destination...");
+      workletNode.connect(context.destination);
+
+      audioContextRef.current = context;
+      setAudioContext(context);
+      setAudioWorkletNode(workletNode);
+      
+      console.log("Audio context initialized successfully");
+    } catch (error) {
+      console.error("Error initializing audio context:", error);
+    }
   };
 
   // Handle audio response from Gemini
   const handleAudioResponse = async (base64Audio: string) => {
     try {
+      console.log("Received audio response from Gemini");
+      
       if (!audioContextRef.current || !audioWorkletNode) {
+        console.log("Initializing audio context for response...");
         await initializeAudioContext();
       }
 
       if (audioContextRef.current?.state === "suspended") {
+        console.log("Resuming suspended audio context...");
         await audioContextRef.current.resume();
       }
 
+      console.log("Converting audio data...");
       const arrayBuffer = base64ToArrayBuffer(base64Audio);
       const float32Data = convertPCM16LEToFloat32(arrayBuffer);
+      
+      console.log("Sending audio data to worklet...");
       audioWorkletNode?.port.postMessage(float32Data);
+      
+      console.log("Audio processing completed");
     } catch (error) {
       console.error("Error processing audio chunk:", error);
     }
@@ -396,6 +428,7 @@ const ARView = () => {
   // Start voice chat
   const startVoiceChat = async () => {
     try {
+      console.log("Starting voice chat...");
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
           channelCount: 1,
@@ -403,8 +436,10 @@ const ARView = () => {
         },
       });
 
+      console.log("Creating audio context for input...");
       const context = new AudioContext({
         sampleRate: 16000,
+        latencyHint: 'interactive'
       });
 
       const source = context.createMediaStreamSource(stream);
@@ -426,6 +461,7 @@ const ARView = () => {
       intervalRef.current = setInterval(sendAudioChunk, 3000);
       setIsVoiceChatActive(true);
       setMicOn(true);
+      console.log("Voice chat started successfully");
     } catch (error) {
       console.error("Error starting voice chat:", error);
     }
@@ -445,33 +481,56 @@ const ARView = () => {
 
   // Send audio chunk to Gemini
   const sendAudioChunk = () => {
-    if (!wsRef.current || !currentFrameB64) return;
+    if (!wsRef.current) {
+      console.log("Cannot send audio chunk: WebSocket not ready");
+      return;
+    }
 
-    const buffer = new ArrayBuffer(pcmDataRef.current.length * 2);
-    const view = new DataView(buffer);
-    pcmDataRef.current.forEach((value, index) => {
-      view.setInt16(index * 2, value, true);
-    });
+    if (!currentFrameB64) {
+      console.log("Cannot send audio chunk: No frame data available");
+      return;
+    }
 
-    const base64 = btoa(String.fromCharCode.apply(null, new Uint8Array(buffer)));
+    if (pcmDataRef.current.length === 0) {
+      console.log("No audio data to send");
+      return;
+    }
 
-    const payload = {
-      realtime_input: {
-        media_chunks: [
-          {
-            mime_type: "audio/pcm",
-            data: base64,
-          },
-          {
-            mime_type: "image/jpeg",
-            data: currentFrameB64,
-          },
-        ],
-      },
-    };
+    try {
+      console.log("Preparing audio chunk...");
+      console.log(`Audio data length: ${pcmDataRef.current.length}`);
+      console.log(`Frame data length: ${currentFrameB64.length}`);
 
-    wsRef.current.send(JSON.stringify(payload));
-    pcmDataRef.current = [];
+      const buffer = new ArrayBuffer(pcmDataRef.current.length * 2);
+      const view = new DataView(buffer);
+      pcmDataRef.current.forEach((value, index) => {
+        view.setInt16(index * 2, value, true);
+      });
+
+      const base64 = btoa(String.fromCharCode.apply(null, new Uint8Array(buffer)));
+
+      const payload = {
+        realtime_input: {
+          media_chunks: [
+            {
+              mime_type: "audio/pcm",
+              data: base64,
+            },
+            {
+              mime_type: "image/jpeg",
+              data: currentFrameB64,
+            },
+          ],
+        },
+      };
+
+      console.log("Sending audio chunk to Gemini...");
+      wsRef.current.send(JSON.stringify(payload));
+      pcmDataRef.current = [];
+      console.log("Audio chunk sent successfully");
+    } catch (error) {
+      console.error("Error sending audio chunk:", error);
+    }
   };
   
   return (
