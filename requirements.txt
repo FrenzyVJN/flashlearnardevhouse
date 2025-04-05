@@ -7,3 +7,4 @@ agno
 google-generativeai
 tavily-python
 aiofiles
+google-genai
