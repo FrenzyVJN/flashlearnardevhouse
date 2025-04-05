@@ -78,6 +78,7 @@ const ScanItem = () => {
   };
 
   const handleContinue = () => {
+    localStorage.setItem("scannedItems", JSON.stringify(identifiedItems));
     navigate('/projects', { state: { items: identifiedItems } });
   };
 

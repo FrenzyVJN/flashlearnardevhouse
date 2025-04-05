@@ -29,85 +29,139 @@ const mockProjects = [
 
 const ProjectIdeas = () => {
   const location = useLocation();
-  const [projects, setProjects] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
   const [filteredProjects, setFilteredProjects] = useState([]);
   const [allProjects, setAllProjects] = useState([]);
   const [activeFilter, setActiveFilter] = useState('all');
-  const apiCallMade = useRef(false);
+  const [scannedItems, setScannedItems] = useState([]);
   
-  const scannedItems = location.state?.items || [];
-  
+  // Get scanned items from location state or localStorage
   useEffect(() => {
-    // Only run this effect if we have scanned items and haven't made the API call yet
-    if (scannedItems.length > 0 && !apiCallMade.current) {
-      const generateProjects = async () => {
-        // Set loading and generating states
-        setIsLoading(true);
-        setIsGenerating(true);
-        apiCallMade.current = true;
-        
-        try {
-          const itemsString = scannedItems.join(', ');
-          
-          const GEMINI_API_KEY = "AIzaSyD-UHTng5Gh82qHDTuoxxZiM_nSNbDXqr8";
-          const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
-          
-          const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              contents: [{
-                parts: [{
-                  text: `Generate creative DIY project or recipes or whatever is relevant in that particular domain ideas using these materials: ${itemsString}. 
-                  Format the response as a JSON array of objects with these properties: 
-                  id (number), 
-                  title (string), 
-                  description (string), 
-                  steps (List of JSON Objects as such {
-                    title (string)
-                    description (string)
-                  }),
-                  difficulty ("Easy", "Medium", or "Hard"), 
-                  timeRequired (string like "1 hour"), 
-                  imageUrl (use https://http.cat/images/418.jpg as a placeholder), 
-                  rating (number between 4.0 and 5.0), 
-                  materials (array of strings).
-                  Only include projects that use at least one of the scanned items. Generate 5-8 projects.`
-                }]
-              }]
-            })
-          });
-  
-          if (!response.ok) throw new Error("Failed to generate projects");
-  
-          const data = await response.json();
-          const projectsText = data.candidates[0].content.parts[0].text;          
-          const jsonMatch = projectsText.match(/\[[\s\S]*\]/);
-          const projectsJson = jsonMatch ? jsonMatch[0] : projectsText;
-          const generatedProjects = JSON.parse(projectsJson);
-
-          setProjects(generatedProjects);
-          setAllProjects(generatedProjects);
-          setFilteredProjects(generatedProjects);
-        } catch (error) {
-          console.error("Error generating projects:", error);
-          setProjects(mockProjects);
-          setFilteredProjects(mockProjects);
-          alert("Error generating projects");
-        } finally {
-          setIsLoading(false);
-          setIsGenerating(false);
-        }
-      };
-  
-      generateProjects();
+    let items = location.state?.items || [];
+    
+    // If no items in location state, try localStorage
+    if (items.length === 0 && localStorage.getItem("scannedItems")) {
+      try {
+        items = JSON.parse(localStorage.getItem("scannedItems"));
+      } catch (e) {
+        console.error("Error parsing scanned items from localStorage:", e);
+        items = [];
+      }
     }
+    
+    // If we have items, store them in localStorage for future use
+    if (items.length > 0) {
+      localStorage.setItem("scannedItems", JSON.stringify(items));
+    }
+    
+    setScannedItems(items);
+  }, [location.state]);
+  
+  // Load projects from localStorage or generate new ones
+  useEffect(() => {
+    const loadProjects = async () => {
+      setIsLoading(true);
+      
+      // Check if we have cached projects for these items
+      const cachedItemsKey = localStorage.getItem("cachedItemsKey");
+      const currentItemsKey = scannedItems.sort().join('|');
+      
+      // If we have cached projects and they match current items
+      if (cachedItemsKey === currentItemsKey) {
+        try {
+          const cachedProjects = JSON.parse(localStorage.getItem("cachedProjects"));
+          if (cachedProjects && Array.isArray(cachedProjects) && cachedProjects.length > 0) {
+            console.log("Using cached projects");
+            setAllProjects(cachedProjects);
+            setFilteredProjects(cachedProjects);
+            setIsLoading(false);
+            return;
+          }
+        } catch (e) {
+          console.error("Error parsing cached projects:", e);
+        }
+      }
+      
+      // If no valid cached projects or items changed, generate new ones
+      if (scannedItems.length > 0) {
+        await generateProjects();
+      } else {
+        // No items to generate projects from, use mock data
+        setAllProjects(mockProjects);
+        setFilteredProjects(mockProjects);
+        setIsLoading(false);
+      }
+    };
+    
+    loadProjects();
   }, [scannedItems]);
   
+  // Generate new projects using the API
+  const generateProjects = async () => {
+    setIsGenerating(true);
+    
+    try {
+      const itemsString = scannedItems.join(', ');
+      
+      const GEMINI_API_KEY = "AIzaSyD-UHTng5Gh82qHDTuoxxZiM_nSNbDXqr8";
+      const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
+      
+      const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{
+              text: `Generate creative DIY project or recipes or whatever is relevant in that particular domain ideas using these materials: ${itemsString}. 
+              Format the response as a JSON array of objects with these properties: 
+              id (number), 
+              title (string), 
+              description (string), 
+              steps (List of JSON Objects as such {
+                title (string)
+                description (string)
+              }),
+              difficulty ("Easy", "Medium", or "Hard"), 
+              timeRequired (string like "1 hour"), 
+              imageUrl (use https://http.cat/images/418.jpg as a placeholder), 
+              rating (number between 4.0 and 5.0), 
+              materials (array of strings).
+              Only include projects that use at least one of the scanned items. Generate 5-8 projects.`
+            }]
+          }]
+        })
+      });
+
+      if (!response.ok) throw new Error("Failed to generate projects");
+
+      const data = await response.json();
+      const projectsText = data.candidates[0].content.parts[0].text;          
+      const jsonMatch = projectsText.match(/\[[\s\S]*\]/);
+      const projectsJson = jsonMatch ? jsonMatch[0] : projectsText;
+      const generatedProjects = JSON.parse(projectsJson);
+      
+      // Cache the generated projects with the current items key
+      const currentItemsKey = scannedItems.sort().join('|');
+      localStorage.setItem("cachedItemsKey", currentItemsKey);
+      localStorage.setItem("cachedProjects", JSON.stringify(generatedProjects));
+      
+      setAllProjects(generatedProjects);
+      setFilteredProjects(generatedProjects);
+    } catch (error) {
+      console.error("Error generating projects:", error);
+      setAllProjects(mockProjects);
+      setFilteredProjects(mockProjects);
+      alert("Error generating projects. Using mock data instead.");
+    } finally {
+      setIsLoading(false);
+      setIsGenerating(false);
+    }
+  };
+  
+  // Apply difficulty filters
   useEffect(() => {
     if (activeFilter !== 'all') {
       setFilteredProjects(allProjects.filter(project => 
