@@ -106,7 +106,7 @@ const ARActualView: React.FC = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.REACT_APP_MOONDREAM_API_KEY}`
+          'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXlfaWQiOiJkZDdhMmZmOC0zYjQwLTQxODMtYTcxZS1jMzkwYmMyMGNmODkiLCJpYXQiOjE3NDM4NzQ1NDJ9.qQgyLcBHZzVfg5vl1aFPe6YPzaE6MnKKe4odlGAg6KE`
         },
         body: JSON.stringify({
           image: imageData,
