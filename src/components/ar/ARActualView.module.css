@@ -132,4 +132,68 @@
 
 .statusDot.paused {
   background-color: #e74c3c;
+}
+
+.stepNavigation {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 20px 0;
+  padding: 15px;
+  background-color: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+}
+
+.navButton {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  background-color: rgba(74, 144, 226, 0.2);
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.navButton:hover:not(:disabled) {
+  background-color: rgba(74, 144, 226, 0.3);
+  transform: translateY(-2px);
+}
+
+.navButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.stepCounter {
+  font-size: 16px;
+  font-weight: 600;
+  color: #4a90e2;
+}
+
+.currentStep {
+  margin: 20px 0;
+  padding: 20px;
+  background-color: rgba(74, 144, 226, 0.1);
+  border-radius: 8px;
+  border-left: 4px solid #4a90e2;
+}
+
+.currentStep h4 {
+  margin: 0 0 10px 0;
+  color: #4a90e2;
+  font-size: 18px;
+}
+
+.currentStep p {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.5;
+  color: #e0e0e0;
+}
+
+.step.active {
+  background-color: rgba(74, 144, 226, 0.2);
+  border-left-color: #4a90e2;
+  transform: scale(1.02);
 } 

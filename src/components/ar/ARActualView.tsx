@@ -16,6 +16,7 @@ const ARActualView: React.FC = () => {
   const [isPaused, setIsPaused] = useState(false);
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const location = useLocation();
   const projectDetails = location.state as ProjectDetails;
 
@@ -45,7 +46,6 @@ const ARActualView: React.FC = () => {
     if (isPaused) {
       setIsPaused(false);
     } else {
-      // Capture current frame before pausing
       const video = videoRef.current;
       const canvas = canvasRef.current;
       if (video && canvas) {
@@ -60,11 +60,23 @@ const ARActualView: React.FC = () => {
     }
   };
 
+  const goToNextStep = () => {
+    if (projectDetails && currentStepIndex < projectDetails.steps.length - 1) {
+      setCurrentStepIndex(prev => prev + 1);
+    }
+  };
+
+  const goToPreviousStep = () => {
+    if (currentStepIndex > 0) {
+      setCurrentStepIndex(prev => prev - 1);
+    }
+  };
+
   const analyzeCurrentStep = async () => {
     console.log("Analyzing current step", projectDetails);
     if (!projectDetails || isAnalyzing) return;
 
-    const currentStep = projectDetails.steps.find(step => !step.completed);
+    const currentStep = projectDetails.steps[currentStepIndex];
     if (!currentStep) return;
 
     setIsAnalyzing(true);
@@ -104,6 +116,8 @@ const ARActualView: React.FC = () => {
     }
   };
 
+  const currentStep = projectDetails?.steps[currentStepIndex];
+
   return (
     <div className={styles.arActualView}>
       <div className={styles.cameraContainer}>
@@ -140,13 +154,39 @@ const ARActualView: React.FC = () => {
       </div>
       {projectDetails && (
         <div className={styles.projectInfo}>
-          <h3>Current Instructions</h3>
+          <h3>Project Instructions</h3>
           <p className={styles.instructions}>{projectDetails.instructions}</p>
+          
+          <div className={styles.stepNavigation}>
+            <button 
+              className={styles.navButton}
+              onClick={goToPreviousStep}
+              disabled={currentStepIndex === 0}
+            >
+              Previous Step
+            </button>
+            <span className={styles.stepCounter}>
+              Step {currentStepIndex + 1} of {projectDetails.steps.length}
+            </span>
+            <button 
+              className={styles.navButton}
+              onClick={goToNextStep}
+              disabled={currentStepIndex === projectDetails.steps.length - 1}
+            >
+              Next Step
+            </button>
+          </div>
+
+          <div className={styles.currentStep}>
+            <h4>Current Step:</h4>
+            <p>{currentStep?.description}</p>
+          </div>
+
           <div className={styles.steps}>
             {projectDetails.steps.map((step, index) => (
               <div 
                 key={index} 
-                className={`${styles.step} ${step.completed ? styles.completed : ''}`}
+                className={`${styles.step} ${step.completed ? styles.completed : ''} ${index === currentStepIndex ? styles.active : ''}`}
               >
                 {step.description}
               </div>
