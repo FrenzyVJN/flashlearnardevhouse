@@ -4,11 +4,13 @@ from pymongo import MongoClient
 from fastapi.middleware.cors import CORSMiddleware
 from datetime import datetime
 import hashlib
+from typing import List
 
 # MongoDB setup (replace with your actual Atlas URI)
 client = MongoClient("mongodb+srv://FrenzyVJN:adminadmin@edita.6tl7jsm.mongodb.net/?appName=Edita")
 db = client["flashlearnar"]
 users_collection = db["users"]
+projects_collection = db["Projects"]
 
 app = FastAPI()
 
@@ -36,6 +38,19 @@ class UserLogin(BaseModel):
 # Utils
 def hash_password(password: str) -> str:
     return hashlib.sha256(password.encode()).hexdigest()
+
+class UserDetailsForPublish(BaseModel):
+    name: str
+    avatar: str
+    level: str
+
+class ProjectPost(BaseModel):
+    user: UserDetailsForPublish
+    title: str
+    content: str
+    image: str
+    projectName: str
+    tags: List[str]
 
 @app.post("/signup")
 async def signup(user: UserSignup):
@@ -74,3 +89,12 @@ async def login(user: UserLogin):
     }
 
     return {"message": "User Login successfully", "user": sanitized_user}
+
+@app.post("/projects")
+def add_project(project: ProjectPost):
+    new_project = project.dict()
+    new_project["likes"] = 0
+    new_project["comments"] = 0
+    result = projects_collection.insert_one(new_project)
+    
+    return {"message": "Project added"}

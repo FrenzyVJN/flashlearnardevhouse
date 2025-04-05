@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { AnimatedButton } from '@/components/ui/AnimatedButton';
-import { Camera, Image, Layers, Users, User } from 'lucide-react';
+import { Camera, Image, Layers, Users, User, Share2 } from 'lucide-react';
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -22,6 +22,7 @@ const Navbar = () => {
     { name: 'Scan', path: '/scan', icon: <Camera className="w-4 h-4 mr-2" /> },
     { name: 'Projects', path: '/projects', icon: <Layers className="w-4 h-4 mr-2" /> },
     { name: 'Community', path: '/community', icon: <Users className="w-4 h-4 mr-2" /> },
+    { name: 'Publish', path: '/publish', icon: <Share2 className="w-4 h-4 mr-2" /> },
   ];
 
   return (
