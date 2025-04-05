@@ -26,7 +26,6 @@ interface ProjectCardProps {
 }
 
 interface UserData {
-  password: string
   name: string
   username: string
   bio: string
@@ -38,9 +37,11 @@ interface UserData {
   joinedDate: string
   badges: string[]
   completedProjects: ProjectCardProps[]
+  savedItems: string[]
+  activityFeed: any[]
 }
 // Mock user data
-const userData = {
+const mockUserData: UserData = {
   name: "Alex Johnson",
   username: "alexmaker",
   bio: "DIY enthusiast and upcycling advocate. I love turning junk into something beautiful and functional.",
@@ -62,7 +63,6 @@ const userData = {
       rating: 4.8,
       materials: ["Cardboard tube", "LED lights", "Paint", "Glue"],
       steps: [],
-      completedOn: "3 weeks ago"
     },
     {
       id: 2,
@@ -74,7 +74,6 @@ const userData = {
       rating: 4.9,
       materials: ["Wine bottles", "LED string lights", "Drill", "Cork"],
       steps: [],
-      completedOn: "2 months ago"
     },
     {
       id: 5,
@@ -86,7 +85,6 @@ const userData = {
       rating: 4.7,
       materials: ["Empty plastic bottles", "Soil", "Seeds", "Scissors"],
       steps: [],
-      completedOn: "1 week ago"
     }
   ],
   savedItems: [
@@ -126,9 +124,14 @@ const userData = {
 const Profile = () => {
   const [activeTab, setActiveTab] = useState('projects');
   const [isLoading, setIsLoading] = useState(true);
+  const [userData, setUserData] = useState<UserData>(mockUserData);
   
   useEffect(() => {
-    // Simulate loading
+    if (localStorage.getItem("currentUser") != undefined) {
+      let temp = JSON.parse(localStorage.getItem("currentUser"))
+      setUserData(temp);
+      console.log(userData);
+    }
     setTimeout(() => {
       setIsLoading(false);
     }, 1000);
@@ -372,4 +375,5 @@ const Profile = () => {
 export default Profile;
 
 // Missing import for Check component
-import { Check } from 'lucide-react';
+import { Check } from 'lucide-react';import { mock } from 'node:test';
+

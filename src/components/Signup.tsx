@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import users from '../data/users.json'
 
 interface ProjectStep {
     title: string;
@@ -56,12 +55,8 @@ export default function Signup() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
   
-    const newUser = {
-      ...form,
-      projects: 0,
-      followers: 0,
-      following: 0,
-    }
+    const newUser = { ...form  }
+    console.log(newUser);
   
     try {
       console.log("try entered")
@@ -72,11 +67,11 @@ export default function Signup() {
         },
         body: JSON.stringify(newUser)
       })
-      console.log("worked")
       const data = await res.json()
       if (!res.ok) throw new Error(data.detail)
   
-      alert("User registered! Now login.")
+      console.log(data)
+      localStorage.setItem("currentUser", JSON.stringify(data.user))
     } catch (err: any) {
       alert("Error: " + err.message)
     }

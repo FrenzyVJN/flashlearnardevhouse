@@ -24,6 +24,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { UserData } from '@/lib/types';
 
 // Mock user database (replace with localStorage)
 const MOCK_USERS = [
@@ -119,90 +120,61 @@ const Auth = () => {
     return storedUsers ? JSON.parse(storedUsers) : MOCK_USERS;
   };
 
-  const onLoginSubmit = (values: LoginFormValues) => {
-    // Simulate network delay
-    setTimeout(() => {
-      try {
-        const users = getUsers();
-        const user = users.find(u => 
-          u.username === values.username && 
-          u.password === values.password
-        );
-        
-        if (!user) {
-          throw new Error("Invalid username or password");
-        }
-        
-        // Generate JWT token
-        const token = generateJWT(user);
-        
-        // Store the token and user info
-        localStorage.setItem('authToken', token);
-        localStorage.setItem('currentUser', JSON.stringify({
-          name: user.name,
-          username: user.username,
-          bio: user.bio,
-          avatar: user.avatar,
-          level: user.level
-        }));
-        
-        // Set token expiration if "remember me" is not checked
-        if (!values.rememberMe) {
-          localStorage.setItem('tokenExpiry', (Date.now() + 24 * 60 * 60 * 1000).toString());
-        }
-        
-        toast.success("Login successful");
-        navigate("/profile");
-      } catch (err) {
-        toast.error(err.message);
-      }
-    }, 800); // Simulate network delay
-  };
-  
-  const onSignupSubmit = (values: SignupFormValues) => {
-    // Simulate network delay
-    setTimeout(() => {
-      try {
-        const users = getUsers();
-        
-        // Check if user already exists
-        if (users.some(u => u.username === values.username)) {
-          throw new Error("User with this email already exists");
-        }
-        
-        // Create new user
-        const newUser = {
-          name: values.name,
+  const onLoginSubmit = async (values: LoginFormValues) => {
+    try {
+      const res = await fetch('http://localhost:8000/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
           username: values.username,
           password: values.password,
-          bio: "New user",
-          avatar: "",
-          level: "Beginner"
-        };
-        
-        // Store updated users list
-        localStorage.setItem('users', JSON.stringify([...users, newUser]));
-        
-        // Generate JWT token
-        const token = generateJWT(newUser);
-        
-        // Store the token and user info
-        localStorage.setItem('authToken', token);
-        localStorage.setItem('currentUser', JSON.stringify({
-          name: newUser.name,
-          username: newUser.username,
-          bio: newUser.bio,
-          avatar: newUser.avatar,
-          level: newUser.level
-        }));
-        
-        toast.success("Account created successfully");
-        navigate("/profile");
-      } catch (err) {
-        toast.error(err.message);
+        }),
+      });
+  
+      const data = await res.json();
+  
+      if (!res.ok) throw new Error(data.detail);
+  
+      alert("Login successful!");
+      console.log(data)
+      localStorage.setItem("currentUser", JSON.stringify(data.user));
+  
+      if (!values.rememberMe) {
+        localStorage.setItem('tokenExpiry', (Date.now() + 24 * 60 * 60 * 1000).toString());
       }
-    }, 800); // Simulate network delay
+  
+      navigate("/profile");
+    } catch (err: any) {
+      toast.error("Login failed: " + err.message);
+    }
   };
+  
+  
+  const onSignupSubmit = async (values: SignupFormValues) => {
+    console.log(values)
+    try {
+      const res = await fetch('http://localhost:8000/signup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(values)
+      });
+  
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail);
+  
+      localStorage.setItem("authToken", generateJWT(data.user));
+      localStorage.setItem("currentUser", JSON.stringify(data.user));
+  
+      toast.success("Account created successfully");
+    } catch (err: any) {
+      toast.error(err.message);
+    }
+  };
+  
   
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-background to-background/90 px-4 py-10">
