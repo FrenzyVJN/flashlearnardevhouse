@@ -140,7 +140,7 @@ detect = Agent(
         tools=[TavilyTools(api_key="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")],
         description="you are an image detection model",
         instructions=["list the items in the image",
-                    "ignore insignificant items like connecting wires and screws",
+                    "ignore insignificant items like background, connecting wires and screws",
                     "be as specific as possible"],
         response_model=Objects
 )

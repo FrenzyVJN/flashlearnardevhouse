@@ -39,10 +39,23 @@ const ARView = () => {
   const [facingMode, setFacingMode] = useState<'environment' | 'user'>('environment');
   const [lastFrameUrl, setLastFrameUrl] = useState<string | null>(null);
   const [micon, setMicOn] = useState(false);
+  const [webSocket, setWebSocket] = useState<WebSocket | null>(null);
+  const [audioContext, setAudioContext] = useState<AudioContext | null>(null);
+  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+  const [pcmData, setPcmData] = useState<number[]>([]);
+  const [currentFrameB64, setCurrentFrameB64] = useState<string | null>(null);
+  const [audioWorkletNode, setAudioWorkletNode] = useState<AudioWorkletNode | null>(null);
+  const [isVoiceChatActive, setIsVoiceChatActive] = useState(false);
+  const [chatMessages, setChatMessages] = useState<string[]>([]);
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const wsRef = useRef<WebSocket | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const pcmDataRef = useRef<number[]>([]);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
   
   // Handle initial loading of AR resources
   useEffect(() => {
@@ -198,8 +211,11 @@ const ARView = () => {
   };
 
   const handleMicToggle = () => {
-    setMicOn(prev => !prev);
-    // Handle microphone access here if needed
+    if (isVoiceChatActive) {
+      stopVoiceChat();
+    } else {
+      startVoiceChat();
+    }
   };
   
   const toggleAR = () => {
@@ -239,6 +255,189 @@ const ARView = () => {
     setTimeout(() => {
       startCamera();
     }, 300);
+  };
+  
+  // Initialize WebSocket connection
+  useEffect(() => {
+    const connectWebSocket = () => {
+      const ws = new WebSocket("ws://localhost:9080");
+      
+      ws.onopen = () => {
+        console.log("WebSocket connected");
+        // Send initial setup message
+        const setupMessage = {
+          setup: {
+            generation_config: { response_modalities: ["TEXT"] },
+          },
+        };
+        ws.send(JSON.stringify(setupMessage));
+      };
+
+      ws.onmessage = (event) => {
+        const messageData = JSON.parse(event.data);
+        if (messageData.text) {
+          setChatMessages(prev => [...prev, `GEMINI: ${messageData.text}`]);
+        }
+        if (messageData.audio) {
+          handleAudioResponse(messageData.audio);
+        }
+      };
+
+      ws.onerror = (error) => {
+        console.error("WebSocket error:", error);
+      };
+
+      ws.onclose = () => {
+        console.log("WebSocket closed");
+      };
+
+      wsRef.current = ws;
+      setWebSocket(ws);
+    };
+
+    connectWebSocket();
+
+    return () => {
+      if (wsRef.current) {
+        wsRef.current.close();
+      }
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, []);
+
+  // Initialize audio context and worklet
+  const initializeAudioContext = async () => {
+    if (audioContextRef.current) return;
+
+    const context = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
+    await context.audioWorklet.addModule("/pcm-processor.js");
+    const workletNode = new AudioWorkletNode(context, "pcm-processor");
+    workletNode.connect(context.destination);
+
+    audioContextRef.current = context;
+    setAudioContext(context);
+    setAudioWorkletNode(workletNode);
+  };
+
+  // Handle audio response from Gemini
+  const handleAudioResponse = async (base64Audio: string) => {
+    try {
+      if (!audioContextRef.current || !audioWorkletNode) {
+        await initializeAudioContext();
+      }
+
+      if (audioContextRef.current?.state === "suspended") {
+        await audioContextRef.current.resume();
+      }
+
+      const arrayBuffer = base64ToArrayBuffer(base64Audio);
+      const float32Data = convertPCM16LEToFloat32(arrayBuffer);
+      audioWorkletNode?.port.postMessage(float32Data);
+    } catch (error) {
+      console.error("Error processing audio chunk:", error);
+    }
+  };
+
+  // Utility functions for audio processing
+  const base64ToArrayBuffer = (base64: string) => {
+    const binaryString = window.atob(base64);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+    return bytes.buffer;
+  };
+
+  const convertPCM16LEToFloat32 = (pcmData: ArrayBuffer) => {
+    const inputArray = new Int16Array(pcmData);
+    const float32Array = new Float32Array(inputArray.length);
+    for (let i = 0; i < inputArray.length; i++) {
+      float32Array[i] = inputArray[i] / 32768;
+    }
+    return float32Array;
+  };
+
+  // Start voice chat
+  const startVoiceChat = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          channelCount: 1,
+          sampleRate: 16000,
+        },
+      });
+
+      const context = new AudioContext({
+        sampleRate: 16000,
+      });
+
+      const source = context.createMediaStreamSource(stream);
+      const processor = context.createScriptProcessor(4096, 1, 1);
+
+      processor.onaudioprocess = (e) => {
+        const inputData = e.inputBuffer.getChannelData(0);
+        const pcm16 = new Int16Array(inputData.length);
+        for (let i = 0; i < inputData.length; i++) {
+          pcm16[i] = inputData[i] * 0x7fff;
+        }
+        pcmDataRef.current.push(...pcm16);
+      };
+
+      source.connect(processor);
+      processor.connect(context.destination);
+
+      // Start sending audio chunks
+      intervalRef.current = setInterval(sendAudioChunk, 3000);
+      setIsVoiceChatActive(true);
+      setMicOn(true);
+    } catch (error) {
+      console.error("Error starting voice chat:", error);
+    }
+  };
+
+  // Stop voice chat
+  const stopVoiceChat = () => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+    }
+    if (audioContextRef.current) {
+      audioContextRef.current.close();
+    }
+    setIsVoiceChatActive(false);
+    setMicOn(false);
+  };
+
+  // Send audio chunk to Gemini
+  const sendAudioChunk = () => {
+    if (!wsRef.current || !currentFrameB64) return;
+
+    const buffer = new ArrayBuffer(pcmDataRef.current.length * 2);
+    const view = new DataView(buffer);
+    pcmDataRef.current.forEach((value, index) => {
+      view.setInt16(index * 2, value, true);
+    });
+
+    const base64 = btoa(String.fromCharCode.apply(null, new Uint8Array(buffer)));
+
+    const payload = {
+      realtime_input: {
+        media_chunks: [
+          {
+            mime_type: "audio/pcm",
+            data: base64,
+          },
+          {
+            mime_type: "image/jpeg",
+            data: currentFrameB64,
+          },
+        ],
+      },
+    };
+
+    wsRef.current.send(JSON.stringify(payload));
+    pcmDataRef.current = [];
   };
   
   return (
@@ -441,6 +640,13 @@ const ARView = () => {
             </div>
           </div>
         )}
+      </div>
+      
+      {/* Add chat messages display */}
+      <div className="absolute bottom-32 left-4 right-4 max-h-32 overflow-y-auto bg-black/60 backdrop-blur-sm rounded-lg p-4 z-40">
+        {chatMessages.map((message, index) => (
+          <p key={index} className="text-white text-sm mb-2">{message}</p>
+        ))}
       </div>
     </div>
   );
