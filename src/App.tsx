@@ -9,6 +9,7 @@ import Scan from "./pages/Scan";
 import Projects from "./pages/Projects";
 import Project from "./pages/Project";
 import AR from "./pages/AR";
+import ARActual from "./pages/ARActual";
 import Community from "./pages/Community";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
@@ -30,7 +31,8 @@ const App = () => {
             <Route path="/scan" element={<Scan />} />
             <Route path="/projects" element={<Projects />} />
             <Route path="/project/:id" element={<Project />} />
-            <Route path="/ar/:id" element={<AR />} />
+            <Route path="/ai/:id" element={<AR />} />
+            <Route path="/ar/:id" element={<ARActual />} />
             <Route path="/community" element={<Community />} />
             <Route path="/logs" element={<LogSign />} />
             <Route path="/auth" element={<Auth />} />

@@ -83,8 +83,8 @@ const ProjectDetails = () => {
   const [activeStep, setActiveStep] = useState(0);
   const [projectData, setProjectData] = useState<ProjectCardProps>();
 
-  
-  
+
+
   useEffect(() => {
     const cachedProjects = JSON.parse(localStorage.getItem("cachedProjects"));
     const curr = parseInt(id);
@@ -93,14 +93,14 @@ const ProjectDetails = () => {
       return;
     }
     if (cachedProjects && Array.isArray(cachedProjects) && cachedProjects.length > curr) {
-      setProjectData(cachedProjects[curr-1])
+      setProjectData(cachedProjects[curr - 1])
       console.log("Using cached projects");
     }
     setTimeout(() => {
       setIsLoading(false);
     }, 300);
   }, []);
-  
+
   const handleNextStep = () => {
     console.log(activeStep, projectData.steps.length);
     if (activeStep < projectData.steps.length - 1) {
@@ -109,7 +109,7 @@ const ProjectDetails = () => {
       alert("congrats!!");
     }
   };
-  
+
   const handlePrevStep = () => {
     if (activeStep > 0) {
       setActiveStep(activeStep - 1);
@@ -117,7 +117,7 @@ const ProjectDetails = () => {
       alert("nooo!!");
     }
   };
-  
+
   if (isLoading) {
     return (
       <div className="max-w-6xl mx-auto w-full p-6 flex justify-center items-center min-h-[50vh]">
@@ -125,7 +125,7 @@ const ProjectDetails = () => {
       </div>
     );
   }
-  
+
   return (
     <div className="max-w-6xl mx-auto w-full p-6">
       <div className="mb-8">
@@ -133,54 +133,65 @@ const ProjectDetails = () => {
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back to Projects
         </Link>
-        
+
         <div className="flex flex-col md:flex-row gap-8">
           <div className="md:w-2/3">
             <h1 className="text-3xl font-bold text-gradient mb-2">{projectData.title}</h1>
             <p className="text-gray-400 mb-6">{projectData.description}</p>
-            
+
             <div className="flex flex-wrap gap-4 mb-6">
               <div className="flex items-center glass-morphism px-3 py-2 rounded-lg">
-                <div className={`w-3 h-3 rounded-full mr-2 ${
-                  projectData.difficulty === "Easy" ? "bg-green-500" :
-                  projectData.difficulty === "Medium" ? "bg-yellow-500" : "bg-red-500"
-                }`}></div>
+                <div className={`w-3 h-3 rounded-full mr-2 ${projectData.difficulty === "Easy" ? "bg-green-500" :
+                    projectData.difficulty === "Medium" ? "bg-yellow-500" : "bg-red-500"
+                  }`}></div>
                 <span className="text-sm">{projectData.difficulty} Difficulty</span>
               </div>
-              
+
               <div className="flex items-center glass-morphism px-3 py-2 rounded-lg">
                 <Clock className="w-4 h-4 mr-2 text-electric-400" />
                 <span className="text-sm">{projectData.timeRequired}</span>
               </div>
-              
+
               <div className="flex items-center glass-morphism px-3 py-2 rounded-lg">
                 <Star className="w-4 h-4 mr-2 text-yellow-400 fill-yellow-400" />
                 <span className="text-sm">{projectData.rating} Rating</span>
               </div>
             </div>
           </div>
-          
+
           <div className="md:w-1/3 flex justify-end">
-            <AnimatedButton 
-              variant="electric" 
-              className="w-full md:w-auto"
-              withGlow
-            >
-              <Link to={`/ar/${id}`} className="flex items-center justify-center">
-                Start AR Instructions
-                <ChevronRight className="ml-2 w-5 h-5" />
-              </Link>
-            </AnimatedButton>
+            <div className="flex flex-col gap-4">
+              <AnimatedButton
+                variant="electric"
+                className="w-full md:w-auto"
+                withGlow
+              >
+                <Link to={`/ai/${id}`} className="flex items-center justify-center">
+                  Chat with AI
+                  <ChevronRight className="ml-2 w-5 h-5" />
+                </Link>
+              </AnimatedButton>
+              <AnimatedButton
+                variant="electric"
+                className="w-full md:w-auto"
+                withGlow
+              >
+                <Link to={`/ar/${id}`} className="flex items-center justify-center">
+                  Start AR Instructions
+                  <ChevronRight className="ml-2 w-5 h-5" />
+                </Link>
+              </AnimatedButton>
+            </div>
           </div>
         </div>
       </div>
-      
+
       <div className="mb-12">
         <h2 className="text-xl font-bold mb-4">Materials You'll Need</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {projectData.materials.map((material, index) => (
-            <div 
-              key={index} 
+            <div
+              key={index}
               className="glass-morphism p-4 rounded-lg flex items-center animate-fade-in"
               style={{ animationDelay: `${index * 100}ms` }}
             >
@@ -190,11 +201,11 @@ const ProjectDetails = () => {
           ))}
         </div>
       </div>
-      
+
       {/* Step by step instructions */}
       <div className="mb-12">
         <h2 className="text-xl font-bold mb-6">Step-by-Step Instructions</h2>
-        
+
         {/* Step progress */}
         <div className="mb-8">
           <div className="flex justify-between items-center mb-2">
@@ -206,46 +217,45 @@ const ProjectDetails = () => {
             </span>
           </div>
           <div className="h-2 bg-gray-700 rounded-full">
-            <div 
+            <div
               className="h-full bg-gradient-to-r from-electric-600 to-electric-400 rounded-full transition-all duration-300"
               style={{ width: `${((activeStep + 1) / projectData.steps.length) * 100}%` }}
             ></div>
           </div>
         </div>
-        
+
         {/* Current step */}
         <AnimatedCard className="mb-8 animate-fade-in">
           <div className="flex flex-col md:flex-row gap-8">
             <div className="md:w-1/2">
               <div className="rounded-lg overflow-hidden mb-4">
-                <img 
+                <img
                   src={projectData.imageUrl}
                   alt={`Step ${activeStep + 1}`}
                   className="w-full h-auto"
                 />
               </div>
             </div>
-            
+
             <div className="md:w-1/2">
               <h3 className="text-xl font-bold mb-4">
                 {activeStep + 1}. {projectData.steps[activeStep].title}
               </h3>
               <p className="text-gray-400 mb-6">{projectData.steps[activeStep].description}</p>
-              
+
               <div className="flex space-x-4">
-                <button 
+                <button
                   className="px-4 py-2 border border-white/10 rounded-lg text-gray-400 hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   onClick={handlePrevStep}
                 >
                   Previous Step
                 </button>
-                
-                <button 
-                  className={`px-4 py-2 rounded-lg ${
-                    activeStep === projectData.steps.length - 1
-                    ? "bg-green-600 hover:bg-green-700 text-white"
-                    : "bg-electric-600 hover:bg-electric-700 text-white"
-                  } transition-colors`}
+
+                <button
+                  className={`px-4 py-2 rounded-lg ${activeStep === projectData.steps.length - 1
+                      ? "bg-green-600 hover:bg-green-700 text-white"
+                      : "bg-electric-600 hover:bg-electric-700 text-white"
+                    } transition-colors`}
                   onClick={handleNextStep}
                 >
                   {activeStep === projectData.steps.length - 1 ? "Complete Project" : "Next Step"}
@@ -254,25 +264,23 @@ const ProjectDetails = () => {
             </div>
           </div>
         </AnimatedCard>
-        
+
         {/* Step list */}
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           {projectData.steps.map((step, index) => (
             <button
               key={index}
-              className={`p-4 rounded-lg text-left transition-all duration-300 ${
-                index === activeStep 
-                ? "glass-morphism border-2 border-electric-500 shadow-glow" 
-                : index < activeStep 
-                  ? "glass-morphism opacity-70" 
-                  : "glass-morphism opacity-50"
-              }`}
+              className={`p-4 rounded-lg text-left transition-all duration-300 ${index === activeStep
+                  ? "glass-morphism border-2 border-electric-500 shadow-glow"
+                  : index < activeStep
+                    ? "glass-morphism opacity-70"
+                    : "glass-morphism opacity-50"
+                }`}
               onClick={() => setActiveStep(index)}
             >
               <div className="flex items-center mb-2">
-                <div className={`w-6 h-6 rounded-full flex items-center justify-center mr-2 ${
-                  index <= activeStep ? "bg-electric-500 text-black" : "bg-gray-700 text-gray-400"
-                }`}>
+                <div className={`w-6 h-6 rounded-full flex items-center justify-center mr-2 ${index <= activeStep ? "bg-electric-500 text-black" : "bg-gray-700 text-gray-400"
+                  }`}>
                   {index + 1}
                 </div>
                 <span className={index <= activeStep ? "text-white" : "text-gray-400"}>
@@ -283,11 +291,11 @@ const ProjectDetails = () => {
           ))}
         </div>
       </div>
-      
+
       {/* Community feedback section */}
       <div className="mb-12 grid md:grid-cols-2 gap-8">
-      <ProjectAIChat projectTitle={projectData.title} />
-      
+        <ProjectAIChat projectTitle={projectData.title} />
+
         <div>
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-xl font-bold">Community Feedback</h2>
@@ -302,19 +310,19 @@ const ProjectDetails = () => {
               </button>
             </div>
           </div>
-          
+
           <div className="space-y-6">
             {comments.map((comment, index) => (
-              <AnimatedCard 
-                key={index} 
-                withBorder 
-                className="animate-fade-in" 
+              <AnimatedCard
+                key={index}
+                withBorder
+                className="animate-fade-in"
                 delay={index * 200}
               >
                 <div className="flex items-start space-x-4">
-                  <img 
-                    src={comment.avatar} 
-                    alt={comment.user} 
+                  <img
+                    src={comment.avatar}
+                    alt={comment.user}
                     className="w-10 h-10 rounded-full"
                   />
                   <div className="flex-1">
@@ -322,9 +330,9 @@ const ProjectDetails = () => {
                       <h4 className="font-semibold">{comment.user}</h4>
                       <div className="flex items-center">
                         {Array.from({ length: 5 }).map((_, i) => (
-                          <Star 
-                            key={i} 
-                            className={`w-4 h-4 ${i < comment.rating ? "text-yellow-400 fill-yellow-400" : "text-gray-600"}`} 
+                          <Star
+                            key={i}
+                            className={`w-4 h-4 ${i < comment.rating ? "text-yellow-400 fill-yellow-400" : "text-gray-600"}`}
                           />
                         ))}
                       </div>
