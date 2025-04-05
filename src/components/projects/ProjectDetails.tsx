@@ -1,7 +1,6 @@
-import { useState, useEffect, act } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { useLocation } from 'react-router-dom';
-import { ArrowLeft, Star, Clock, Users, MessageCircle, Share2, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Star, Clock, MessageCircle, Share2, ChevronRight } from 'lucide-react';
 import { AnimatedButton } from '@/components/ui/AnimatedButton';
 import { AnimatedCard } from '@/components/ui/AnimatedCard';
 import ProjectAIChat from './ProjectAIChat';
@@ -79,17 +78,27 @@ const projectDataMock: ProjectCardProps = {
 };
 
 const ProjectDetails = () => {
-  const location = useLocation();
   const { id } = useParams<{ id: string }>();
   const [isLoading, setIsLoading] = useState(true);
   const [activeStep, setActiveStep] = useState(0);
+  const [projectData, setProjectData] = useState<ProjectCardProps>();
 
-  const projectData: ProjectCardProps = JSON.parse(location.state?.project) || projectDataMock;
+  
   
   useEffect(() => {
+    const cachedProjects = JSON.parse(localStorage.getItem("cachedProjects"));
+    const curr = parseInt(id);
+    if (curr == undefined) {
+      alert("Invalid ID!!");
+      return;
+    }
+    if (cachedProjects && Array.isArray(cachedProjects) && cachedProjects.length > curr) {
+      setProjectData(cachedProjects[curr-1])
+      console.log("Using cached projects");
+    }
     setTimeout(() => {
       setIsLoading(false);
-    }, 1000);
+    }, 300);
   }, []);
   
   const handleNextStep = () => {

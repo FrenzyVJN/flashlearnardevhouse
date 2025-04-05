@@ -7,28 +7,23 @@ import { AnimatedButton } from '@/components/ui/AnimatedButton';
 const mockSteps = [
   { 
     title: "Position the cardboard tube", 
-    instruction: "Place the cardboard tube upright on a flat surface.",
-    arModel: "tube_placement.glb"
+    discription: "Place the cardboard tube upright on a flat surface.",
   },
   { 
     title: "Cut the cone shape", 
-    instruction: "Use scissors to cut out the cone shape for the rocket nose.",
-    arModel: "cutting_cone.glb"
+    discription: "Use scissors to cut out the cone shape for the rocket nose.",
   },
   { 
     title: "Attach the cone", 
-    instruction: "Apply glue to the top of the tube and attach the cone.",
-    arModel: "attaching_cone.glb"
+    discription: "Apply glue to the top of the tube and attach the cone.",
   },
   { 
     title: "Add the fins", 
-    instruction: "Glue the fins evenly spaced around the bottom of the tube.",
-    arModel: "adding_fins.glb"
+    discription: "Glue the fins evenly spaced around the bottom of the tube.",
   },
   { 
     title: "Paint the rocket", 
-    instruction: "Paint your rocket in your chosen colors.",
-    arModel: "painting_rocket.glb"
+    discription: "Paint your rocket in your chosen colors.",
   }
 ];
 
@@ -37,6 +32,7 @@ const ARView = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [isARActive, setIsARActive] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [currentSteps, setCurrentSteps] = useState<any[]>(mockSteps)
   const [isPaused, setIsPaused] = useState(false);
   const [hasPermission, setHasPermission] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
@@ -55,6 +51,17 @@ const ARView = () => {
         setIsLoading(false);
       }
     }, 2000);
+
+    const cachedProjects = JSON.parse(localStorage.getItem("cachedProjects"));
+    const curr = parseInt(id);
+    if (curr == undefined) {
+      alert("Invalid ID!!");
+      return;
+    }
+    if (cachedProjects && Array.isArray(cachedProjects) && cachedProjects.length > curr) {
+      setCurrentSteps(cachedProjects[curr-1].steps)
+      console.log("Using cached projects");
+    }
     
     return () => clearTimeout(timer);
   }, [hasPermission]);
@@ -175,7 +182,7 @@ const ARView = () => {
   };
   
   const handleNextStep = () => {
-    if (currentStep < mockSteps.length - 1) {
+    if (currentStep < currentSteps.length - 1) {
       setIsLoading(true);
       setCurrentStep(prevStep => prevStep + 1);
       setTimeout(() => setIsLoading(false), 1000);
@@ -321,7 +328,7 @@ const ARView = () => {
                       <div className="absolute w-3/4 h-3/4 bg-electric-500/10 rounded-full animate-pulse"></div>
                       <div className="absolute">
                         {/* <img 
-                          src={`https://source.unsplash.com/random/600x600?diy,craft,${mockSteps[currentStep].title}`} 
+                          src={`https://source.unsplash.com/random/600x600?diy,craft,${currentSteps[currentStep].title}`} 
                           alt="AR Object" 
                           className="w-48 h-48 object-contain"
                         /> */}
@@ -387,9 +394,9 @@ const ARView = () => {
             {/* Instruction panel */}
             <div className="absolute bottom-0 left-0 right-0 glass-morphism p-6 z-30">
               <div className="flex justify-between items-center mb-4">
-                <span className="text-sm text-gray-400">Step {currentStep + 1} of {mockSteps.length}</span>
+                <span className="text-sm text-gray-400">Step {currentStep + 1} of {currentSteps.length}</span>
                 <div className="flex space-x-1">
-                  {mockSteps.map((_, index) => (
+                  {currentSteps.map((_, index) => (
                     <div 
                       key={index}
                       className={`w-2 h-2 rounded-full ${
@@ -400,8 +407,8 @@ const ARView = () => {
                 </div>
               </div>
               
-              <h3 className="text-xl font-bold text-white mb-2">{mockSteps[currentStep].title}</h3>
-              <p className="text-gray-300 mb-4">{mockSteps[currentStep].instruction}</p>
+              <h3 className="text-xl font-bold text-white mb-2">{currentSteps[currentStep].title}</h3>
+              <p className="text-gray-300 mb-4">{currentSteps[currentStep].description}</p>
               
               <div className="flex justify-between">
                 <button 
@@ -416,9 +423,9 @@ const ARView = () => {
                 <button 
                   className="flex items-center px-4 py-2 rounded-lg bg-electric-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
                   onClick={handleNextStep}
-                  disabled={currentStep === mockSteps.length - 1 || isLoading}
+                  disabled={currentStep === currentSteps.length - 1 || isLoading}
                 >
-                  {currentStep === mockSteps.length - 1 ? (
+                  {currentStep === currentSteps.length - 1 ? (
                     <>
                       <Check className="w-5 h-5 mr-1" />
                       Complete
