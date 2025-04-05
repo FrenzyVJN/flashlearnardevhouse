@@ -25,15 +25,27 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
+// Mock user database (replace with localStorage)
+const MOCK_USERS = [
+  {
+    name: "Demo User",
+    username: "demo@example.com",
+    password: "password123",
+    bio: "Demo account",
+    avatar: "",
+    level: "Beginner"
+  }
+];
+
 const loginSchema = z.object({
-  username: z.string().username({ message: "Please enter a valid email address" }),
+  username: z.string().email({ message: "Please enter a valid email address" }),
   password: z.string().min(6, { message: "Password must be at least 6 characters long" }),
   rememberMe: z.boolean().optional(),
 });
 
 const signupSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters long" }),
-  username: z.string().username({ message: "Please enter a valid email address" }),
+  username: z.string().email({ message: "Please enter a valid email address" }),
   password: z.string().min(6, { message: "Password must be at least 6 characters long" }),
   confirmPassword: z.string(),
   termsAccepted: z.boolean().refine(val => val === true, {
@@ -46,6 +58,35 @@ const signupSchema = z.object({
 
 type LoginFormValues = z.infer<typeof loginSchema>;
 type SignupFormValues = z.infer<typeof signupSchema>;
+
+// Function to generate a simple JWT
+const generateJWT = (user) => {
+  // Create a JWT header
+  const header = {
+    alg: "HS256",
+    typ: "JWT"
+  };
+
+  // Create a JWT payload with user data and expiration
+  const payload = {
+    sub: user.username,
+    name: user.name,
+    exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60), // 24 hours from now
+    iat: Math.floor(Date.now() / 1000)
+  };
+
+  // In a real app, you'd use a proper JWT library
+  // For this static example, we'll base64 encode the parts
+  const base64Header = btoa(JSON.stringify(header));
+  const base64Payload = btoa(JSON.stringify(payload));
+  
+  // In a real app, this would be signed with a secret key
+  // Here we're just concatenating with a dummy signature
+  const signature = btoa("static_signature_for_demo");
+  
+  // Combine all parts to form the JWT
+  return `${base64Header}.${base64Payload}.${signature}`;
+};
 
 const Auth = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -71,51 +112,99 @@ const Auth = () => {
       termsAccepted: false,
     },
   });
-  const API_BASE_URL = "http://localhost:8000";
-  const onLoginSubmit = async (values: LoginFormValues) => {
-    try {
-      const res = await fetch(`${API_BASE_URL}/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          username: values.username, // or actual username
-          password: values.password,
-        }),
-      });
   
-      if (!res.ok) throw new Error((await res.json()).detail);
-  
-      toast.success("Login successful");
-      navigate("/profile");
-    } catch (err) {
-      toast.error(err.message);
-    }
+  // Get stored users or initialize with mock data
+  const getUsers = () => {
+    const storedUsers = localStorage.getItem('users');
+    return storedUsers ? JSON.parse(storedUsers) : MOCK_USERS;
+  };
+
+  const onLoginSubmit = (values: LoginFormValues) => {
+    // Simulate network delay
+    setTimeout(() => {
+      try {
+        const users = getUsers();
+        const user = users.find(u => 
+          u.username === values.username && 
+          u.password === values.password
+        );
+        
+        if (!user) {
+          throw new Error("Invalid username or password");
+        }
+        
+        // Generate JWT token
+        const token = generateJWT(user);
+        
+        // Store the token and user info
+        localStorage.setItem('authToken', token);
+        localStorage.setItem('currentUser', JSON.stringify({
+          name: user.name,
+          username: user.username,
+          bio: user.bio,
+          avatar: user.avatar,
+          level: user.level
+        }));
+        
+        // Set token expiration if "remember me" is not checked
+        if (!values.rememberMe) {
+          localStorage.setItem('tokenExpiry', (Date.now() + 24 * 60 * 60 * 1000).toString());
+        }
+        
+        toast.success("Login successful");
+        navigate("/profile");
+      } catch (err) {
+        toast.error(err.message);
+      }
+    }, 800); // Simulate network delay
   };
   
-  const onSignupSubmit = async (values: SignupFormValues) => {
-    try {
-      const res = await fetch(`${API_BASE_URL}/signup`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+  const onSignupSubmit = (values: SignupFormValues) => {
+    // Simulate network delay
+    setTimeout(() => {
+      try {
+        const users = getUsers();
+        
+        // Check if user already exists
+        if (users.some(u => u.username === values.username)) {
+          throw new Error("User with this email already exists");
+        }
+        
+        // Create new user
+        const newUser = {
           name: values.name,
-          username: values.username, // or actual username field
+          username: values.username,
           password: values.password,
           bio: "New user",
           avatar: "",
           level: "Beginner"
-        }),
-      });
-  
-      if (!res.ok) throw new Error((await res.json()).detail);
-  
-      toast.success("Account created successfully");
-      navigate("/profile");
-    } catch (err) {
-      toast.error(err.message);
-    }
+        };
+        
+        // Store updated users list
+        localStorage.setItem('users', JSON.stringify([...users, newUser]));
+        
+        // Generate JWT token
+        const token = generateJWT(newUser);
+        
+        // Store the token and user info
+        localStorage.setItem('authToken', token);
+        localStorage.setItem('currentUser', JSON.stringify({
+          name: newUser.name,
+          username: newUser.username,
+          bio: newUser.bio,
+          avatar: newUser.avatar,
+          level: newUser.level
+        }));
+        
+        toast.success("Account created successfully");
+        navigate("/profile");
+      } catch (err) {
+        toast.error(err.message);
+      }
+    }, 800); // Simulate network delay
   };
-    return (
+  
+  return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-background to-background/90 px-4 py-10">
       <Link to="/" className="absolute top-6 left-6 flex items-center text-gray-400 hover:text-white transition-colors">
         <ArrowLeft className="mr-2 h-5 w-5" />
