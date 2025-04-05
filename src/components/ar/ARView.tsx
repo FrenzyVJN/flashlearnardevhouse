@@ -368,6 +368,16 @@ const ARView = () => {
       console.log("Connecting worklet to destination...");
       workletNode.connect(context.destination);
 
+      // Add error handling for the worklet
+      workletNode.onprocessorerror = (error) => {
+        console.error("Worklet processor error:", error);
+      };
+
+      // Add message handling for debugging
+      workletNode.port.onmessage = (event) => {
+        console.log("Received message from worklet:", event.data);
+      };
+
       audioContextRef.current = context;
       setAudioContext(context);
       setAudioWorkletNode(workletNode);
@@ -395,12 +405,24 @@ const ARView = () => {
 
       console.log("Converting audio data...");
       const arrayBuffer = base64ToArrayBuffer(base64Audio);
+      console.log(`Array buffer size: ${arrayBuffer.byteLength} bytes`);
+      
       const float32Data = convertPCM16LEToFloat32(arrayBuffer);
+      console.log(`Float32 array size: ${float32Data.length} samples`);
+      
+      // Ensure the audio context is running
+      if (audioContextRef.current?.state !== "running") {
+        console.log("Starting audio context...");
+        await audioContextRef.current?.resume();
+      }
       
       console.log("Sending audio data to worklet...");
       audioWorkletNode?.port.postMessage(float32Data);
       
-      console.log("Audio processing completed");
+      // Add a small delay to ensure the worklet has time to process
+      setTimeout(() => {
+        console.log("Audio processing completed");
+      }, 100);
     } catch (error) {
       console.error("Error processing audio chunk:", error);
     }
@@ -429,36 +451,57 @@ const ARView = () => {
   const startVoiceChat = async () => {
     try {
       console.log("Starting voice chat...");
+      
+      // Capture initial frame
+      captureVideoFrame();
+      
+      // Set up periodic frame capture
+      const frameInterval = setInterval(captureVideoFrame, 3000);
+      
+      // Create a separate input context with worklet for recording
+      console.log("Creating input audio context...");
+      const inputContext = new AudioContext({
+        sampleRate: 16000,
+        latencyHint: 'interactive'
+      });
+      
+      // Load the recorder worklet
+      console.log("Loading recorder worklet...");
+      await inputContext.audioWorklet.addModule("/mic-recorder-processor.js");
+      
+      // Get microphone stream
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
           channelCount: 1,
           sampleRate: 16000,
         },
       });
-
-      console.log("Creating audio context for input...");
-      const context = new AudioContext({
-        sampleRate: 16000,
-        latencyHint: 'interactive'
-      });
-
-      const source = context.createMediaStreamSource(stream);
-      const processor = context.createScriptProcessor(4096, 1, 1);
-
-      processor.onaudioprocess = (e) => {
-        const inputData = e.inputBuffer.getChannelData(0);
-        const pcm16 = new Int16Array(inputData.length);
-        for (let i = 0; i < inputData.length; i++) {
-          pcm16[i] = inputData[i] * 0x7fff;
+      
+      // Create source from microphone
+      const source = inputContext.createMediaStreamSource(stream);
+      
+      // Create recorder worklet node
+      console.log("Creating recorder worklet node...");
+      const recorderNode = new AudioWorkletNode(inputContext, "mic-recorder-processor");
+      
+      // Connect source to recorder
+      source.connect(recorderNode);
+      recorderNode.connect(inputContext.destination);
+      
+      // Handle PCM data from worklet
+      recorderNode.port.onmessage = (event) => {
+        if (event.data && event.data.type === 'pcm_data') {
+          pcmDataRef.current.push(...event.data.data);
         }
-        pcmDataRef.current.push(...pcm16);
       };
-
-      source.connect(processor);
-      processor.connect(context.destination);
-
+      
+      // Store context for cleanup
+      audioContextRef.current = inputContext;
+      
       // Start sending audio chunks
-      intervalRef.current = setInterval(sendAudioChunk, 3000);
+      const audioInterval = setInterval(sendAudioChunk, 3000);
+      intervalRef.current = audioInterval;
+      
       setIsVoiceChatActive(true);
       setMicOn(true);
       console.log("Voice chat started successfully");
@@ -471,6 +514,7 @@ const ARView = () => {
   const stopVoiceChat = () => {
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
+      intervalRef.current = null;
     }
     if (audioContextRef.current) {
       audioContextRef.current.close();
@@ -486,9 +530,12 @@ const ARView = () => {
       return;
     }
 
+    // Check if we have frame data, but don't block audio-only messages
+    // This allows voice chat to work even without camera access
+    let hasFrameData = true;
     if (!currentFrameB64) {
-      console.log("Cannot send audio chunk: No frame data available");
-      return;
+      console.log("No frame data available, sending audio-only message");
+      hasFrameData = false;
     }
 
     if (pcmDataRef.current.length === 0) {

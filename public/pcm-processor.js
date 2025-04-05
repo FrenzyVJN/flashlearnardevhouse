@@ -17,8 +17,12 @@ class PCMProcessor extends AudioWorkletProcessor {
                 this.buffer = newBuffer;
                 
                 console.log(`Total buffer length: ${this.buffer.length}`);
+                
+                // Send confirmation back to main thread
+                this.port.postMessage({ type: 'buffer_updated', length: this.buffer.length });
             } catch (error) {
                 console.error("Error in worklet message handler:", error);
+                this.port.postMessage({ type: 'error', error: error.message });
             }
         };
     }
@@ -29,7 +33,9 @@ class PCMProcessor extends AudioWorkletProcessor {
             const channelData = output[0];
 
             if (this.buffer.length >= channelData.length) {
+                // Copy data from buffer to output
                 channelData.set(this.buffer.slice(0, channelData.length));
+                // Remove processed data from buffer
                 this.buffer = this.buffer.slice(channelData.length);
                 return true;
             }
@@ -39,6 +45,7 @@ class PCMProcessor extends AudioWorkletProcessor {
             return true;
         } catch (error) {
             console.error("Error in worklet process:", error);
+            this.port.postMessage({ type: 'error', error: error.message });
             return true;
         }
     }
