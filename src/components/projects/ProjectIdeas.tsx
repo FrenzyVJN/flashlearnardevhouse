@@ -30,11 +30,11 @@ const mockProjects = [
 const ProjectIdeas = () => {
   const location = useLocation();
   const [projects, setProjects] = useState([]);
-  const [generationDone, setGenerationDone] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isGenerating, setIsGenerating] = useState(false);
   const [filteredProjects, setFilteredProjects] = useState([]);
   const [allProjects, setAllProjects] = useState([]);
-  const [activeFilter, setActiveFilter] = useState<string>('all');
+  const [activeFilter, setActiveFilter] = useState('all');
   const apiCallMade = useRef(false);
   
   const scannedItems = location.state?.items || [];
@@ -43,8 +43,9 @@ const ProjectIdeas = () => {
     // Only run this effect if we have scanned items and haven't made the API call yet
     if (scannedItems.length > 0 && !apiCallMade.current) {
       const generateProjects = async () => {
-        // Set loading state
+        // Set loading and generating states
         setIsLoading(true);
+        setIsGenerating(true);
         apiCallMade.current = true;
         
         try {
@@ -99,6 +100,7 @@ const ProjectIdeas = () => {
           alert("Error generating projects");
         } finally {
           setIsLoading(false);
+          setIsGenerating(false);
         }
       };
   
@@ -107,12 +109,14 @@ const ProjectIdeas = () => {
   }, [scannedItems]);
   
   useEffect(() => {
-    if (activeFilter != 'all') {
+    if (activeFilter !== 'all') {
       setFilteredProjects(allProjects.filter(project => 
         project.difficulty.toLowerCase() === activeFilter
       ));
+    } else {
+      setFilteredProjects(allProjects);
     }
-  }, [activeFilter, projects]);
+  }, [activeFilter, allProjects]);
   
   const difficultyFilters = ['all', 'easy', 'medium', 'hard'];
   
@@ -125,7 +129,7 @@ const ProjectIdeas = () => {
           <div className="glass-morphism rounded-lg p-4 mb-6">
             <p className="text-gray-300 mb-2">Based on your items:</p>
             <div className="flex flex-wrap gap-2">
-              {scannedItems.map((item: string, index: number) => (
+              {scannedItems.map((item, index) => (
                 <span 
                   key={index} 
                   className="bg-midnight-800 text-white px-3 py-1 rounded-full text-sm animate-fade-in"
@@ -159,11 +163,23 @@ const ProjectIdeas = () => {
       </div>
       
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[1, 2, 3, 4, 5, 6].map((item) => (
-            <ProjectCardSkeleton key={item} />
-          ))}
-        </div>
+        <>
+          {isGenerating && (
+            <div className="text-center mb-8">
+              <div className="inline-block glass-morphism rounded-lg p-4 animate-pulse">
+                <div className="flex items-center space-x-3">
+                  <div className="w-6 h-6 border-4 border-electric-600 border-t-transparent rounded-full animate-spin"></div>
+                  <span className="text-lg font-medium text-white">Generating project ideas for your items...</span>
+                </div>
+              </div>
+            </div>
+          )}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[1, 2, 3, 4, 5, 6].map((item) => (
+              <ProjectCardSkeleton key={item} />
+            ))}
+          </div>
+        </>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredProjects.map((project, index) => (
