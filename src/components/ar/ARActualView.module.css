@@ -197,3 +197,35 @@
   border-left-color: #4a90e2;
   transform: scale(1.02);
 } 
+
+/* Add these styles to your ARActualView.module.css file */
+
+.analysisResults {
+  margin-top: 1rem;
+  padding: 1rem;
+  border-radius: 8px;
+  background-color: #f5f5f5;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.analysisResults.success {
+  border-left: 4px solid #28a745;
+}
+
+.analysisResults.incomplete {
+  border-left: 4px solid #ffc107;
+}
+
+.analysisResults.error {
+  border-left: 4px solid #dc3545;
+}
+
+.analysisResults h4 {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  font-size: 1.1rem;
+}
+
+.analysisResults p {
+  margin: 0.5rem 0;
+}
